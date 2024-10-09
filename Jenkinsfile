@@ -3,7 +3,7 @@ node {
     def tomcatBin = 'E:\apache-tomee-supplier\bin'
     
     stage('SCM Checkout') {
-        git 'https://github.com/ashVen1996/SupplierPortal.git'
+        git 'https://github.com/rameshdadi78/Supplier.git'
     }
     
     stage('Compile-Package-create-war-file') {
