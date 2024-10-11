@@ -112,11 +112,11 @@ public class SupplierPortal {
 	@Path("parts")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getAllColumns(@Context UriInfo uriInfo) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String userName = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
-	    // Load properties file
+		// Load properties file
 	    Properties pro = new Properties();
 	    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
 	    if (input == null) {
@@ -308,10 +308,10 @@ public class SupplierPortal {
 	        @QueryParam("fromid") String fromId,
 	        @QueryParam("connattributes") boolean connAttributes
 	) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/SP";
-	    String userName = "postgres";
-	    String password = "Manoj123";
-	    
+		String url=System.getenv("SupplierPortalSPDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
+
 	    // Load properties file
 	    Properties properties = new Properties();
 	    try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
@@ -413,79 +413,7 @@ public class SupplierPortal {
 	    return new JSONObject().put("results", jsonArray).toString();
 	}
 
-//	@GET
-//	@Path("ebomdetail")
-//	@Produces(MediaType.APPLICATION_JSON)
-//	public String getEBOMDetail(
-//	        @QueryParam("fromid") String fromId,
-//	        @QueryParam("connattributes") boolean connAttributes
-//	) throws Exception {
-//	    String url = "jdbc:postgresql://localhost:5432/SP";
-//	    String userName = "postgres";
-//	    String password = "Manoj123";
-//	    
-//	    // Load properties file
-//	    Properties properties = new Properties();
-//	    try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
-//	        if (input == null) {
-//	            throw new FileNotFoundException("Property file 'sp.properties' not found in the classpath");
-//	        }
-//	        properties.load(input);
-//	    }
-//
-//	    String ebomTable = properties.getProperty("ebomTable");
-//	    String ebomAttributes = properties.getProperty("ebomattributes");
-//
-//	    // Build the SQL query dynamically based on provided query parameters
-//	    StringBuilder sql = new StringBuilder("SELECT * FROM ");
-//	    sql.append(ebomTable).append(" WHERE 1=1");
-//
-//	    if (fromId != null && !fromId.trim().isEmpty()) {
-//	        sql.append(" AND fromid = '").append(fromId).append("'");
-//	    }
-//
-//	    ResultSet result = null;
-//	    JSONArray jsonArray = new JSONArray();
-//	    try {
-//	        Class.forName("org.postgresql.Driver");
-//	        Connection conn = DriverManager.getConnection(url, userName, password);
-//	        Statement stmt = conn.createStatement();
-//	        
-//	        result = stmt.executeQuery(sql.toString());
-//	        while (result.next()) {
-//	            JSONObject jsonObject = new JSONObject(); // Create new JSONObject for each row
-//	            JSONObject objectDetails = new JSONObject();
-//	            JSONArray attrArray = new JSONArray();
-//
-//	            // Process EBOM attributes
-//	            for (String attrPair : ebomAttributes.split(",")) {
-//	                String[] attrParts = attrPair.split("\\|");
-//	                String attr = attrParts[1].trim();
-//	                JSONObject attrObject = new JSONObject();
-//	                String displayName = attrParts[0].trim();
-//	                attrObject.put("displayName", displayName);
-//	                attrObject.put("name", attr);
-//	                attrObject.put("value", result.getString(attr));
-//	                attrArray.put(attrObject);
-//	            }
-//
-//	            objectDetails.put("attributes", attrArray);
-//	            jsonObject.put("objectid: " + result.getString("fromid"), objectDetails);
-//	            jsonArray.put(jsonObject);
-//	        }
-//	    } catch (Exception e) {
-//	        e.printStackTrace();
-//	    } finally {
-//	        if (result != null) {
-//	            try {
-//	                result.close();
-//	            } catch (Exception e) {
-//	                e.printStackTrace();
-//	            }
-//	        }
-//	    }
-//	    return new JSONObject().put("results", jsonArray).toString();
-//	}
+
 
 	/**
 	 * Retrieves detailed EBOM (Engineering Bill of Materials) records and associated EC Part details from the database based on
@@ -582,10 +510,10 @@ public class SupplierPortal {
 	        @QueryParam("connattributes") boolean connAttributes,
 	        @QueryParam("objectattributes") String objectAttributes
 	) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/SP";
-	    String userName = "postgres";
-	    String password = "Manoj123";
-	    
+		String url=System.getenv("SupplierPortalSPDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
+
 	    // Load properties file
 	    Properties properties = new Properties();
 	    try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
@@ -617,7 +545,6 @@ public class SupplierPortal {
 	    if (fromId != null && !fromId.trim().isEmpty()) {
 	        sql.append(" AND fromid = '").append(fromId).append("'");
 	    }
-	    System.out.println("sql*****************" + sql.toString());
 
 	    ResultSet result = null;
 	    ResultSet ecPartResult = null;
@@ -824,9 +751,9 @@ public class SupplierPortal {
 	@Path("getpersonmembercompanydetails")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getPersonMemberCompanyDetails(@Context UriInfo uriInfo) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/SP";
-	    String userName = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalSPDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
 	    // Load properties file
 	    Properties pro = new Properties();
@@ -1024,9 +951,10 @@ public class SupplierPortal {
 	@Path("getsupplierpersondetails")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getAllSupplierPersonDetails(@Context UriInfo uriInfo) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/SP";
-	    String userName = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalSPDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
+
 
 	    // Load properties file
 	    Properties pro = new Properties();
@@ -1175,15 +1103,15 @@ public class SupplierPortal {
 
 	    String field = json.optString("field");
 
-	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String postgresUser = "postgres";
-	    String postgrespass = "Manoj123";
+	    String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
 	    JSONArray jsonArray = new JSONArray();
 
 	    try {
 	        Class.forName("org.postgresql.Driver");
-	        Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+	        Connection con = DriverManager.getConnection(url, userName, password);
 
 	        String sql = "";
 
@@ -1248,16 +1176,15 @@ public class SupplierPortal {
 	    }
 	}
 
-//	  String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-//	    String userName = "postgres";
-//	    String password = "Manoj123";
+
+
 	@GET
 	@Path("getSupplierDetailsByEmail")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getSupplierDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
-		String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String userName = "postgres";
-		String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
 	    // Load properties file
 	    Properties pro = new Properties();
@@ -1380,9 +1307,9 @@ public class SupplierPortal {
 	@Path("getchangeactiondetails")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String userName = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
 	    // Load properties file
 	    Properties pro = new Properties();
@@ -1467,10 +1394,10 @@ public class SupplierPortal {
 	    @Produces(MediaType.APPLICATION_JSON)
 	    public Response setAcknowledgedInfo(String jsonInput) throws ClassNotFoundException {
 	        // Database connection parameters
-	        String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	        String userName = "postgres";
-	        String password = "Manoj123";
-	        
+		 String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 	        // Load properties file
 	        Properties pro = new Properties();
 	        try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
@@ -1533,10 +1460,10 @@ public class SupplierPortal {
 		@Path("getcaaffectedItems")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCaAffectedItems(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
-
+	 		String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -1650,10 +1577,10 @@ public class SupplierPortal {
 	 	@Produces(MediaType.APPLICATION_JSON)
 	 	@Consumes(MediaType.APPLICATION_JSON)
 	 	public String getSupplierData(String inputJson) throws Exception {
-	 	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	 	    String userName = "postgres";
-	 	    String password = "Manoj123";
-
+	 		String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 	 	    Properties pro = new Properties();
 	 	    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
 	 	    if (input == null) {
@@ -1672,7 +1599,7 @@ public class SupplierPortal {
 	 	    String objectIds = inputObject.getString("objectIds");
 	 	    String caid = inputObject.getString("caid");
 
- 	    String[] objectIdsArray;
+	 	    String[] objectIdsArray;
 	 	    if (objectIds.contains("|")) {
 	 	        objectIdsArray = objectIds.split("\\|");
 	 	    } else {
@@ -1780,9 +1707,9 @@ public class SupplierPortal {
 		@Produces(MediaType.APPLICATION_JSON)
 		public Response setProcessAttributes(String jsonInput) throws ClassNotFoundException {
 		    // Database connection parameters
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
+	 		String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 
 		    // Load properties file
 		    Properties pro = new Properties();
@@ -1858,9 +1785,9 @@ public class SupplierPortal {
 		@Path("getprocessattributedetails")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getProcessAttributeDetails(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 
 		    // Load properties file
 		    Properties pro = new Properties();
@@ -1943,10 +1870,10 @@ public class SupplierPortal {
 		@Path("getDevaitionDetailsByEmail")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getDevaitionDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
-			String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-			String password = "Manoj123";
-
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -2073,10 +2000,10 @@ public class SupplierPortal {
 		@Path("getDevaitionDetails")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getDevaitionDetails(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
-
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -2158,10 +2085,10 @@ public class SupplierPortal {
 		@Path("getCount")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCount(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
-
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -2173,7 +2100,11 @@ public class SupplierPortal {
 		    String caSupplierTable = pro.getProperty("casuppliersdetailsTable");
 		    String deviationTable = pro.getProperty("deviationTable");
 		    String changeactionTable = pro.getProperty("catable");
-
+		    String companyDetailsTable = pro.getProperty("companyTable");
+		    String mpnTable = pro.getProperty("MpnTable");
+		    String mpnRelatedPartsTable = pro.getProperty("MpnconnectionTable");
+		    String ecPartTable = pro.getProperty("ecpartTable");
+		    
 		    String email = uriInfo.getQueryParameters().getFirst("email");
 		    if (email == null || email.trim().isEmpty()) {
 		        return "{ \"error\": \"Missing or empty email parameter\" }";
@@ -2192,22 +2123,35 @@ public class SupplierPortal {
 		            "JOIN " + changeactionTable + " ca ON ca.caid = casd.changenumber " +
 		            "WHERE spd.email_address = ?";
 
+		    String ecPartsCountQuery = "SELECT COUNT(*) " +
+		            "FROM " + supplierTable + " spd " +
+		            "JOIN " + companyDetailsTable + " cd ON spd.companyid = cd.companyid " +
+		            "JOIN " + mpnTable + " mpn ON cd.name = mpn.manufacturername " +
+		            "JOIN " + mpnRelatedPartsTable + " mrp ON mpn.mpnid = mrp.mpnid " +
+		            "JOIN " + ecPartTable + " part ON part.partid=mrp.partid " +
+		            "WHERE spd.email_address = ?";
+
 		    Class.forName("org.postgresql.Driver");
 		    Connection conn = DriverManager.getConnection(url, userName, password);
 		    try {
 		        // Prepare statements
 		        PreparedStatement supplierStmt = conn.prepareStatement(deviationQuery);
 		        PreparedStatement caStmt = conn.prepareStatement(changeactionQuery);
+		        PreparedStatement ecPartsStmt = conn.prepareStatement(ecPartsCountQuery);
+		        
 		        supplierStmt.setString(1, email);
 		        caStmt.setString(1, email);
+		        ecPartsStmt.setString(1, email);
 
 		        // Execute queries
 		        ResultSet supplierResult = supplierStmt.executeQuery();
 		        ResultSet caResult = caStmt.executeQuery();
+		        ResultSet ecPartsResult = ecPartsStmt.executeQuery();
 
 		        // Initialize counts
 		        int deviationCount = 0;
 		        int changeActionCount = 0;
+		        int ecPartsCount = 0;
 
 		        // Get the count for deviations
 		        if (supplierResult.next()) {
@@ -2219,10 +2163,15 @@ public class SupplierPortal {
 		            changeActionCount = caResult.getInt(1);
 		        }
 
+		        // Get the count for EC parts
+		        if (ecPartsResult.next()) {
+		            ecPartsCount = ecPartsResult.getInt(1);
+		        }
+
 		        // Build the JSON response
 		        String jsonResponse = String.format(
-		            "{ \"results\": [{ \"changeaction\": %d, \"deviation\": %d }] }",
-		            changeActionCount, deviationCount
+		            "{ \"results\": [{ \"changeaction\": %d, \"deviation\": %d, \"ecparts\": %d }] }",
+		            changeActionCount, deviationCount, ecPartsCount
 		        );
 
 		        return jsonResponse;
@@ -2231,15 +2180,16 @@ public class SupplierPortal {
 		        if (conn != null) conn.close();
 		    }
 		}
+
 		
 		@GET
 		@Path("getSupplierName")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getSupplierName(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
-
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -2316,10 +2266,10 @@ public class SupplierPortal {
 		@Path("getAssignedPartsVisibility")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getAssignedPartsVisibility(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
-
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
@@ -2382,8 +2332,6 @@ public class SupplierPortal {
 	        return jsonResponse.toString();
 		}
 		
-		
-
 		@POST
 		@Path("searchForCA")
 		@Consumes(MediaType.APPLICATION_JSON)
@@ -2457,15 +2405,15 @@ public class SupplierPortal {
 		        }
 		    }
 
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String postgresUser = "postgres";
-		    String postgrespass = "Manoj123";
+		    String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 
 		    JSONArray jsonArray = new JSONArray();
 
 		    try {
 		        Class.forName("org.postgresql.Driver");
-		        Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+		        Connection con = DriverManager.getConnection(url, userName, password);
 
 		        String sql = "";
 
@@ -2605,15 +2553,15 @@ public class SupplierPortal {
 		        }
 		    }
 
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String postgresUser = "postgres";
-		    String postgrespass = "Manoj123";
+		    String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 
 		    JSONArray jsonArray = new JSONArray();
 
 		    try {
 		        Class.forName("org.postgresql.Driver");
-		        Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+		        Connection con = DriverManager.getConnection(url, userName, password);
 
 		        String sql = "";
 
@@ -2679,14 +2627,14 @@ public class SupplierPortal {
 		    }
 		}
 
-// Web service method to check if cd.name equals mpn.manufacturername
+		// Web service method to check if cd.name equals mpn.manufacturername
 		@GET
 		@Path("getSupplierusercheckforebom")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getSupplierUserCheckForEBOM(@Context UriInfo uriInfo) throws Exception {
-		    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-		    String userName = "postgres";
-		    String password = "Manoj123";
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 
 		    // Load properties file (if necessary)
 		    Properties pro = new Properties();
@@ -2766,4 +2714,6 @@ public class SupplierPortal {
 
 		    return jsonResponse.toString();
 		}
+
 }
+

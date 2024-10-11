@@ -73,10 +73,14 @@ public class LoginPage {
 
             
     		String sql = " INSERT INTO login_details (email,password) VALUES('"+user+"','"+bcryptHashed+"') ";
-        	String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-        	String username = "postgres";
-        	String password = "Manoj123";
+        	
+        	
+        	String url=System.getenv("SupplierPortalDBURL");
+    		String password=System.getenv("SupplierPortalDBPassword");
+    		String username= System.getenv("SupplierPortalDBUsername");
+    		
     		Class.forName("org.postgresql.Driver");
+    		
     		Connection driver = DriverManager.getConnection(url, username, password);
     		Statement stmt = driver.createStatement();
     		
@@ -102,13 +106,14 @@ public class LoginPage {
 			String password = json.getString("password");
 			if(username != null && password != null) {
 				String sql = "select * from login_details";
-		    	String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-		    	String postgresUser = "postgres";
-		    	String postgrespass = "Manoj123";
+				String url=System.getenv("SupplierPortalDBURL");
+	    		String password1=System.getenv("SupplierPortalDBPassword");
+	    		String user= System.getenv("SupplierPortalDBUsername");
+		    	
 				 
 				Class.forName("org.postgresql.Driver");
 				
-				Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+				Connection con = DriverManager.getConnection(url, user, password1);
 				Statement stmt = con.createStatement();
 				ResultSet set = stmt.executeQuery(sql);
 				String status = "";
@@ -127,6 +132,7 @@ public class LoginPage {
 						    	String sql1 = "update login_details SET jwt = '"+jwt+"' Where email = '"+username+"'";
 								stmt.execute(sql1);
 								Map map = addPreference(username);
+								System.out.println("loginPAge"+" "+map);
 								JSONObject json1= new JSONObject(map);
 								js.put("preference", map);
 								js.put("status", status);
@@ -229,9 +235,10 @@ public class LoginPage {
 			
 			String sql = "SELECT * from logindetails";
 			String sqls = "UPDATE logindetails SET password = '"+bcryptHashed+"' WHERE name ILIKE '"+username+"' ";
-	    	String url = "jdbc:postgresql://localhost:5432/Example";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+	    	
+	    	String url=System.getenv("SupplierPortalExampleDBURL");
+    		String postgrespass=System.getenv("SupplierPortalDBPassword");
+    		String postgresUser= System.getenv("SupplierPortalDBUsername");
 	    	
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
@@ -280,12 +287,13 @@ public class LoginPage {
 			String view_names = preference.getString("view_name");
 			String sql = "select * from login_details";
 			
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+		   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
+			
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
-	    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+	    		Connection con = DriverManager.getConnection(url, user, password);
 	    		Statement stmt = con.createStatement();
 	    		ResultSet set = stmt.executeQuery(sql);
 	    		String preferences = "";
@@ -345,13 +353,13 @@ public class LoginPage {
 			String viewName = jsonPrefer.getString("view_name");
 			
 			String sql = "select * from login_details where email ILIKE '"+username+"'";
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+		   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
 			
 			try {
 				Class.forName("org.postgresql.Driver");
-				Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+				Connection con = DriverManager.getConnection(url,user, password);
 				Statement stmt = con.createStatement();
 				ResultSet set = stmt.executeQuery(sql);
 				JSONObject ob1 = null;
@@ -403,14 +411,14 @@ public class LoginPage {
 		if(field.equalsIgnoreCase("Everything")) {
 			String sql = "select  column_name,data_type from information_schema.columns where table_name = 'ec_parts_details'";
 			
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+		   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
 	    	
 			try {
 				Class.forName("org.postgresql.Driver");
 				
-				Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+				Connection con = DriverManager.getConnection(url, user, password);
 				Statement stmt = con.createStatement();
 				
 				ResultSet set = stmt.executeQuery(sql);
@@ -444,14 +452,14 @@ public class LoginPage {
 		else if(field.equalsIgnoreCase("name")) {
 			String sql = "select * from ec_parts_details where name ILIKE '%"+text+"%';";
 			
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 	    	
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
 	    		
-	    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+	    		Connection con = DriverManager.getConnection(url, userName, password);
 	    		Statement stmt = con.createStatement();
 	    		
 	    		ResultSet set = stmt.executeQuery(sql);
@@ -468,14 +476,13 @@ public class LoginPage {
 		else if(field.equalsIgnoreCase("description")) {
 			String sql = "select * from ec_parts_details where description ILIKE '%"+text+"%';";
 			
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
-	    	
+			String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
 	    		
-	    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+	    		Connection con = DriverManager.getConnection(url, userName, password);
 	    		Statement stmt = con.createStatement();
 	    		
 	    		ResultSet set = stmt.executeQuery(sql);
@@ -506,13 +513,13 @@ public class LoginPage {
 			String viewName = json.getString("view_name");
 			
 			String sql = "select * from login_details";
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+		   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
 	    	
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
-	    		Connection con  = DriverManager.getConnection(url, postgresUser, postgrespass);
+	    		Connection con  = DriverManager.getConnection(url, user, password);
 	    		Statement stmt  = con.createStatement();
 	    		ResultSet set = stmt.executeQuery(sql);
 	    		JSONObject js1 = null;
@@ -577,13 +584,13 @@ public class LoginPage {
 		            .compact();
 		    
 		    String sql = "update login_details set jwt = '"+jwtToken+"' where email ILIKE '"+username+"' ";
-			String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-	    	String postgresUser = "postgres";
-	    	String postgrespass = "Manoj123";
+		   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
 	    	try {
 	    		
 	    		Class.forName("org.postgresql.Driver");
-	    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+	    		Connection con = DriverManager.getConnection(url, user, password);
 	    		Statement stmt  = con.createStatement();
 	    		stmt.execute(sql);
 	    		
@@ -626,14 +633,14 @@ public class LoginPage {
             System.err.println("Token validation failed: " + e.getMessage());
         }
 		String sql = "select * from login_details";
-    	String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-    	String postgresUser = "postgres";
-    	String postgrespass = "Manoj123";
+	   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
     	
     	try {
     		Class.forName("org.postgresql.Driver");
     		
-    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+    		Connection con = DriverManager.getConnection(url,user,password);
     		Statement stmt = con.createStatement();
     		
     		ResultSet set = stmt.executeQuery(sql);
@@ -672,35 +679,7 @@ public class LoginPage {
 	    return jwtToken;
 		
 	}
-//	public static String CheckSessionTime(String s) {
-//		String[] data = s.split("\\.");
-//		
-//		try {
-//			String decodedData = new String(Base64.getUrlDecoder().decode(data[1]),StandardCharsets.UTF_8);
-//			JSONObject json = new JSONObject(decodedData);
-//			String username = json.getString("username");
-//			String DateAndTime = json.getString("DateAndTime").trim();
-//			
-//			DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-//			LocalDateTime prasedData = LocalDateTime.parse(DateAndTime,format);
-//			
-//			LocalDateTime now = LocalDateTime.now();
-//			
-//			Duration duration = Duration.between(prasedData, now);
-//			boolean value = duration.toMinutes() < 30;
-//			
-//			if(value) {
-//				System.out.println("less than 30 mins");
-//				String newJwt = CreateJwt(username);
-//				System.out.println("New Jwt is Printed");
-//				return newJwt;
-//			}
-//			
-//		}catch(Exception e) {
-//			return "Error";
-//		}
-//		return "Expired";
-//	}
+
 	public static void ExportData(String username,String password,String status) {
 		String filepath = "C:\\Users\\LENOVO\\Desktop\\statusFile.txt";
 		File file = new File(filepath);
@@ -754,14 +733,14 @@ public class LoginPage {
 		String sql = "SELECT * from login_details";
 		String sqls = " INSERT INTO login_details (email,password) VALUES('"+username+"','"+bcryptHashed+"') ";
 		String sqles ="UPDATE login_details SET password = '"+bcryptHashed+"' WHERE email = '"+username+"' ";
-    	String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-    	String postgresUser = "postgres";
-    	String postgrespass = "Manoj123";
+	   	String url=System.getenv("SupplierPortalDBURL");
+			String pass=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
 		
     	try {
     		Class.forName("org.postgresql.Driver");
     		
-    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+    		Connection con = DriverManager.getConnection(url, user, pass);
     		Statement stmt = con.createStatement();	
     		ResultSet set =  stmt.executeQuery(sql);
     		
@@ -805,15 +784,16 @@ public class LoginPage {
 	
 	public static Map addPreference(String s) {
         Map<String, Object> map = getDataFromFile();
+        System.out.println("perference"+" "+map);
 		String sql = "select preferences from login_details where email ILIKE '"+s+"' ";
 		String sql1 = " ";
-		String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-    	String postgresUser = "postgres";
-    	String postgrespass = "Manoj123";
+	   	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String user= System.getenv("SupplierPortalDBUsername");
     	String preference = null;
     	try {
     		Class.forName("org.postgresql.Driver");
-    		Connection con = DriverManager.getConnection(url, postgresUser, postgrespass);
+    		Connection con = DriverManager.getConnection(url, user, password);
     		Statement stmt = con.createStatement();
     		ResultSet set = stmt.executeQuery(sql);
     		
@@ -821,6 +801,7 @@ public class LoginPage {
     			preference = set.getString("preferences");
     		}									
     		if(preference == null) {
+    			System.out.println("called");
 				JSONObject json = new JSONObject(map);
     			sql1 = "update login_details set preferences = '"+json+"' where email ILIKE '"+s+"'";
     			stmt.execute(sql1);
@@ -852,8 +833,7 @@ public class LoginPage {
 		List list3 = new LinkedList();
 		List list4 = new LinkedList();
 		List list5 = new LinkedList();
-//	    String filePath = "D:\\SP_Backend\\WebSer\\src\\main\\resources\\properties.properties";
-		String filePath = "C:\\Users\\lenovo\\OneDrive\\Desktop\\Manoj_work\\portal\\Supplierportal\\src\\main\\resources\\properties.properties";
+	    String filePath = "C:\\Users\\dell\\Pictures\\new\\Supplierportal\\src\\main\\resources\\properties.properties";
 	    Properties properties = new Properties();
 	    try {
 	        FileInputStream fileInputStream = new FileInputStream(new File(filePath));
@@ -902,7 +882,7 @@ public class LoginPage {
 
 	        finalMap.put("main_table", map);
 	        finalMap.put("views", map2);
-	        
+	        System.out.println(finalMap);
 	       return finalMap;
 	    } catch (Exception e) {
 	        e.printStackTrace();

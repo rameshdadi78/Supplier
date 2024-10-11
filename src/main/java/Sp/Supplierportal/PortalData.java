@@ -2,6 +2,7 @@ package Sp.Supplierportal;
 
 
 
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -24,9 +25,10 @@ public class PortalData {
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getSelectAttributes(@QueryParam("selectedAttributes") String selectedAttributes,
 	                                  @QueryParam("partid") String partid) throws Exception {
-	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String user = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
+		
 	    Properties properties = new Properties();
 	    StringBuilder allValues = new StringBuilder();
 	    JSONObject responseObject = new JSONObject();
@@ -164,9 +166,10 @@ public class PortalData {
 	@Path("mpnallattributes")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getMpnAllAttributes(@QueryParam("partid") String partid) {
-	    String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-	    String user = "postgres";
-	    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
+		
 	    Properties properties = new Properties();
 	    JSONObject responseObject = new JSONObject();
 
@@ -343,9 +346,9 @@ public class PortalData {
     public String getConnectionDetails(@QueryParam("PartId") String partId, 
                                        @QueryParam("selectedAttributes") String selectedAttributes,
                                        @QueryParam("connection") boolean connection) throws Exception {
-        String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-        String user = "postgres";
-        String password = "Manoj123";
+    	String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
         Properties properties = new Properties();
         JSONObject responseObject = new JSONObject();
 
@@ -583,9 +586,10 @@ public class PortalData {
     @Path("supplierdetails")
     @Produces(MediaType.APPLICATION_JSON)
     public String getSupplierDetails(@QueryParam("PartId") String partId) throws Exception {
-        String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-        String user = "postgres";
-        String password = "Manoj123";
+    	String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
+		
         Properties properties = new Properties();
         JSONObject objectDetails = new JSONObject();
         JSONArray AttributesArray = new JSONArray();
@@ -705,9 +709,10 @@ public class PortalData {
     @Path("deviationdetails")
     @Produces(MediaType.APPLICATION_JSON)
     public String getDeviationDetails(@QueryParam("partid") String partid) throws Exception {
-        String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
-        String user = "postgres";
-        String password = "Manoj123";
+    	String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
+		
         Properties properties = new Properties();
         JSONObject responseObject = new JSONObject();
 
@@ -943,9 +948,9 @@ public class PortalData {
     @Path("Specfile")
     @Produces(MediaType.APPLICATION_JSON)
     public  void main(String[] args) throws Exception{
-    	 String url = "jdbc:postgresql://localhost:5432/SupplierPortal";
-         String user = "postgres";
-         String password = "Manoj123";
+    	String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String user= System.getenv("SupplierPortalDBUsername");
 
     	 Properties properties = new Properties();
     	 InputStream propertiesData = getClass().getClassLoader().getResourceAsStream("Portal.properties");

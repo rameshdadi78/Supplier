@@ -49,9 +49,9 @@ public class ECPartInfo {
 @Path("changeActions")
 @Produces(MediaType.APPLICATION_JSON)
 public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
-    String url = "jdbc:postgresql://localhost:5432/supplierportal1";
-    String userName = "postgres";
-    String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
     // Load properties file
     Properties pro = new Properties();
@@ -242,9 +242,9 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
 	@Path("specifications")
 	 @Produces(MediaType.APPLICATION_JSON)
 	   public String getSpecificationDetails(@Context UriInfo uriInfo) throws Exception {
-        String url = "jdbc:postgresql://localhost:5432/supplierportal1";
-        String userName = "postgres";
-        String password = "Manoj123";
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
         // Load properties file
         Properties pro = new Properties();
@@ -458,7 +458,7 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
     public Response downloadFile() {
         // Specify the path to your file
     	//C:\Users\lenovo\Downloads\ABC.txt
-        String filePath = "C:\\Users\\lenovo\\Downloads\\ABC.txt";
+        String filePath = "C:\\Users\\DELL\\Downloads\\ABC.txt";
         File file = new File(filePath);
 
         if (!file.exists()) {
@@ -490,10 +490,10 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
 	    @Path("alternates")
 	    @Produces(MediaType.APPLICATION_JSON)
 	    public String getAlternateParts(@Context UriInfo uriInfo) throws Exception {
-	        String url = "jdbc:postgresql://localhost:5432/supplierportal1";
-	        String userName = "postgres";
-	        String password = "Manoj123";
-
+	    	String url=System.getenv("SupplierPortalDBURL");
+			String password=System.getenv("SupplierPortalDBPassword");
+			String userName= System.getenv("SupplierPortalDBUsername");
+			
 	        // Load properties file
 	        Properties pro = new Properties();
 	        InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties");
