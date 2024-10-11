@@ -2091,7 +2091,7 @@ public class SupplierPortal {
 			String password=System.getenv("SupplierPortalDBPassword");
 			String userName= System.getenv("SupplierPortalDBUsername");*/
 
-			String url = "jdbc:postgresql://localhost:5432/Supplierportal";
+			String url = "jdbc:postgresql://localhost:5432/supplierportal";
 	    String userName = "postgres";
 		String password = "Xploria";
 			
