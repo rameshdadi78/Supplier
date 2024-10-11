@@ -2085,7 +2085,7 @@ public class SupplierPortal {
 		@Path("getCount")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCount(@Context UriInfo uriInfo) throws Exception {
-			System.out.println(System.getProperties().values());
+			System.out.println("--------------------"+System.getProperties().values());
 			String url=System.getenv("SupplierPortalDBURL");
 			String password=System.getenv("SupplierPortalDBPassword");
 			String userName= System.getenv("SupplierPortalDBUsername");
