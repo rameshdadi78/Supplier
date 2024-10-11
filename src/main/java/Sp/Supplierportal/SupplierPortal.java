@@ -2085,11 +2085,15 @@ public class SupplierPortal {
 		@Path("getCount")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCount(@Context UriInfo uriInfo) throws Exception {
-			System.out.println("--------------------"+System.getProperties().values());
+			/*System.out.println("--------------------"+System.getProperties().values());
 			System.out.println("--------------------"+System.getenv());
 			String url=System.getenv("SupplierPortalDBURL");
 			String password=System.getenv("SupplierPortalDBPassword");
-			String userName= System.getenv("SupplierPortalDBUsername");
+			String userName= System.getenv("SupplierPortalDBUsername");*/
+
+			String url = "jdbc:postgresql://localhost:5432/Supplierportal";
+	    String userName = "postgres";
+		String password = "Xploria";
 			
 		    // Load properties file
 		    Properties pro = new Properties();
