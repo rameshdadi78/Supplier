@@ -1,6 +1,6 @@
 node {
-    def tomcatWeb = 'E:\apache-tomee-supplier\webapps'
-    def tomcatBin = 'E:\apache-tomee-supplier\bin'
+    def tomcatWeb = 'D:\apache-tomcat-10.1.30\webapps'
+    def tomcatBin = 'D:\apache-tomcat-10.1.30\bin'
     
     stage('SCM Checkout') {
         git 'https://github.com/rameshdadi78/Supplier.git'
@@ -26,7 +26,7 @@ node {
     }
     
     stage('Deploy to Tomcat') {
-        bat "copy target\\JenkinsWar.war ${tomcatWeb}\\JenkinsWar.war"
+        bat "copy target\\Supplierportal.war ${tomcatWeb}\\Supplierportal.war"
     }
     
     stage('Start Tomcat Server') {
