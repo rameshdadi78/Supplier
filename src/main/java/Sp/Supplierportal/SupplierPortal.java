@@ -2132,7 +2132,7 @@ public class SupplierPortal {
 		    String ecPartsCountQuery = "SELECT COUNT(*) " +
 		            "FROM " + supplierTable + " spd " +
 		            "JOIN " + companyDetailsTable + " cd ON spd.companyid = cd.companyid " +
-		            "JOIN " + mpnTable + " mpn ON cd.name = mpn.manufacturername " +
+		            "JOIN " + mpnTable + " mpn ON cd.name = mpn.companyname " +
 		            "JOIN " + mpnRelatedPartsTable + " mrp ON mpn.mpnid = mrp.mpnid " +
 		            "JOIN " + ecPartTable + " part ON part.id=mrp.partid " +
 		            "WHERE spd.email_address = ?";
