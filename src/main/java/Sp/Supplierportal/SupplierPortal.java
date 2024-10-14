@@ -2126,7 +2126,7 @@ public class SupplierPortal {
 		    String changeactionQuery = "SELECT COUNT(*) " +
 		            "FROM " + supplierTable + " spd " +
 		            "JOIN " + caSupplierTable + " casd ON spd.companyid = casd.companyid " +
-		            "JOIN " + changeactionTable + " ca ON ca.caid = casd.changenumber " +
+		            "JOIN " + changeactionTable + " ca ON ca.ChangeNumber = casd.changenumber " +
 		            "WHERE spd.email_address = ?";
 
 		    String ecPartsCountQuery = "SELECT COUNT(*) " +
@@ -2134,7 +2134,7 @@ public class SupplierPortal {
 		            "JOIN " + companyDetailsTable + " cd ON spd.companyid = cd.companyid " +
 		            "JOIN " + mpnTable + " mpn ON cd.name = mpn.manufacturername " +
 		            "JOIN " + mpnRelatedPartsTable + " mrp ON mpn.mpnid = mrp.mpnid " +
-		            "JOIN " + ecPartTable + " part ON part.partid=mrp.partid " +
+		            "JOIN " + ecPartTable + " part ON part.id=mrp.partid " +
 		            "WHERE spd.email_address = ?";
 
 		    Class.forName("org.postgresql.Driver");
