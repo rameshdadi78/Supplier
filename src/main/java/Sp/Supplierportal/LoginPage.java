@@ -89,6 +89,7 @@ public class LoginPage {
     		System.out.println("Data inserted successfully");
     		
     	}catch(Exception e) {
+			e.printStackTrace();
     		return "unsuccessful";
     	}
  
