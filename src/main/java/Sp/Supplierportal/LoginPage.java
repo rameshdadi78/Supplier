@@ -99,7 +99,7 @@ public class LoginPage {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response login(String loginDetails) throws Exception {
 		JSONObject js = new JSONObject();
-		System.out.println("called");
+		System.out.println("Inside Login");
 		try {
 			JSONObject json = new JSONObject(loginDetails);
 			String username = json.getString("username");
@@ -109,7 +109,11 @@ public class LoginPage {
 				String url=System.getenv("SupplierPortalDBURL");
 	    		String password1=System.getenv("SupplierPortalDBPassword");
 	    		String user= System.getenv("SupplierPortalDBUsername");
-		    	
+		    	System.out.println("url==="+url);
+				System.out.println("password1==="+password1);
+				System.out.println("user==="+user);
+				System.out.println("url==="+System.getProperty("SupplierPortalDBURL"));
+
 				 
 				Class.forName("org.postgresql.Driver");
 				
