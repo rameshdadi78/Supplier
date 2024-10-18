@@ -10,6 +10,9 @@ import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -71,7 +74,7 @@ public class LoginPage {
     		String pass = json.getString("password"); 
             String bcryptHashed = BCrypt.hashpw(pass, BCrypt.gensalt());
 
-            
+            System.out.println("Wasadasdasdsad");
     		String sql = " INSERT INTO login_details (email,password) VALUES('"+user+"','"+bcryptHashed+"') ";
         	
         	
@@ -89,7 +92,12 @@ public class LoginPage {
     		System.out.println("Data inserted successfully");
     		
     	}catch(Exception e) {
-			e.printStackTrace();
+			
+			StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+		System.out.println("CHECK THIS -----"+sw.toString());
+        
     		return "unsuccessful";
     	}
  
