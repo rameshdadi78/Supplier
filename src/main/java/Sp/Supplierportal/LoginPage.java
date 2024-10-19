@@ -1115,7 +1115,7 @@ public class LoginPage {
 			return "Expired";
 		}
 
-			@Path("userCreation")
+			/*@Path("userCreation")
 			@POST
 			@Consumes(MediaType.MULTIPART_FORM_DATA)
 			@Produces(MediaType.APPLICATION_JSON)
@@ -1276,5 +1276,5 @@ public class LoginPage {
 					return Response.serverError()
 							.entity("{\"error\":\"An unexpected error occurred during user creation.\"}").build();
 				}
-			}
+			}*/
 }
