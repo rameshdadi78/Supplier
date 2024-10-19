@@ -1,8 +1,4 @@
 package Sp.Supplierportal;
-
-
-
-
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -19,132 +15,144 @@ import jakarta.ws.rs.core.MediaType;
 @Path("portaldata")
 public class PortalData {
 	
-	
+	/**
+	* Endpoint to retrieve selected attributes based on provided parameters.
+	*
+	* @param selectedAttributes Comma-separated string of selected attribute keys.
+	* @param partid The ID of the part for which attributes are to be fetched.
+	* @return A JSON string representing the selected attributes.
+	* @throws Exception If an error occurs during the retrieval process.
+	*/
 	@GET
 	@Path("selectattributes")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getSelectAttributes(@QueryParam("selectedAttributes") String selectedAttributes,
-	                                  @QueryParam("partid") String partid) throws Exception {
-		String url=System.getenv("SupplierPortalDBURL");
-		String password=System.getenv("SupplierPortalDBPassword");
-		String user= System.getenv("SupplierPortalDBUsername");
-		
-	    Properties properties = new Properties();
-	    StringBuilder allValues = new StringBuilder();
-	    JSONObject responseObject = new JSONObject();
-
-	    try {
-	        InputStream propertiesData = getClass().getClassLoader().getResourceAsStream("Portal.properties");
-	        if (propertiesData == null) {
-	            throw new FileNotFoundException("Portal.properties not found.");
-	        }
-	        properties.load(propertiesData);
-
-	        // Ensure PostgreSQL Driver is loaded
-	        Class.forName("org.postgresql.Driver");
-
-	        String mpnTableName = properties.getProperty("MPNDetailsTable");
-	        String relTableName = properties.getProperty("ConnectionTable");
-	        String attributes = properties.getProperty("Attribute_MPN_All");
-	        String[] attributeValues = attributes.split(",");
-	        Map<String, String> attributeMap = new HashMap<>();
-	        Map<String, String> displayNamesMap = new HashMap<>();
-
-	        for (String attr : attributeValues) {
-	            String[] attrValues = attr.split("\\|");
-	            String key = attrValues[0].trim();
-	            String value = attrValues[1].trim();
-	            attributeMap.put(key, value);
-	            String displayName = properties.getProperty("Attribute_" + key);
-	            if (displayName != null) {
-	                displayNamesMap.put(value, displayName);
-	            }
-	        }
-
-	        if (selectedAttributes != null && !selectedAttributes.isEmpty()) {
-	            String[] selected = selectedAttributes.split(",");
-
-	            for (String selectedAttr : selected) {
-	                String trimmedAttr = selectedAttr.trim();
-	                if (attributeMap.containsKey(trimmedAttr)) {
-	                    if (allValues.length() > 0) {
-	                        allValues.append(", ");
-	                    }
-	                    allValues.append(attributeMap.get(trimmedAttr));
-	                }
-	            }
-	        }
-
-	        String allAttrValues = allValues.toString();
-	        String mpnidSql = "SELECT mpnid FROM " + relTableName + " WHERE partid = ?";
-	        String sql = "SELECT " + allAttrValues + " FROM " + mpnTableName + " WHERE mpnid = ?";
-	        try (Connection conn = DriverManager.getConnection(url, user, password);
-	             PreparedStatement mpnidStmt = conn.prepareStatement(mpnidSql)) {
-	            mpnidStmt.setString(1, partid);
-	            ResultSet mpnidResult = mpnidStmt.executeQuery();
-	            if (mpnidResult.next()) {
-	                String mpnid = mpnidResult.getString("mpnid");
-
-	                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-	                    stmt.setString(1, mpnid);
-
-	                    ResultSet result = stmt.executeQuery();
-	                    ResultSetMetaData metaData = result.getMetaData();
-	                    int columnCount = metaData.getColumnCount();
-
-	                    JSONArray objectDetailsArray = new JSONArray();
-
-	                    while (result.next()) {
-	                        // Keep track of selectable and normal attributes
-	                        JSONArray selectablesArray = new JSONArray();
-	                        JSONArray attributesArray = new JSONArray();
-
-	                        for (int i = 1; i <= columnCount; i++) {
-	                            String columnName = metaData.getColumnName(i);
-	                            String columnValue = result.getString(i);
-
-	                            // Skip the `id` from being added to selectables or attributes
-	                            if (columnName.equalsIgnoreCase("id") || columnName.equalsIgnoreCase("mpnid")) {
-	                                continue;
-	                            }
-
-	                            JSONObject attrObject = new JSONObject();
-	                            String displayName = displayNamesMap.get(columnName);
-	                            if (displayName == null) {
-	                                displayName = columnName;
-	                            }
-	                            attrObject.put("name", columnName);
-	                            attrObject.put("value", columnValue);
-	                            attrObject.put("displayname", displayName);
-
-	                            if (isSelectable(columnName)) {
-	                                selectablesArray.put(attrObject);
-	                            } else {
-	                                attributesArray.put(attrObject);
-	                            }
-	                        }
-
-	                        JSONObject objectDetails = new JSONObject();
-	                        objectDetails.put("selectables", selectablesArray);
-	                        objectDetails.put("attributes", attributesArray);
-	                        objectDetails.put("id", mpnid);  // Keep mpnid in the output
-
-	                        objectDetailsArray.put(objectDetails);
-	                    }
-
-	                    responseObject.put("objectdetails", objectDetailsArray);
-	                }
-	            } else {
-	                throw new RuntimeException("No mpnid found for the provided partid.");
-	            }
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        throw new RuntimeException("Error fetching selected attributes", e);
-	    }
-	    return responseObject.toString();
+									@QueryParam("partid") String partid) throws Exception {
+		String url = System.getenv("SupplierPortalDBURL");
+		String password = System.getenv("SupplierPortalDBPassword");
+		String user = System.getenv("SupplierPortalDBUsername");
+	
+		Properties properties = new Properties();
+		StringBuilder allValues = new StringBuilder();
+		JSONObject responseObject = new JSONObject();
+	
+		try {
+			InputStream propertiesData = getClass().getClassLoader().getResourceAsStream("Portal.properties");
+			if (propertiesData == null) {
+				throw new FileNotFoundException("Portal.properties not found.");
+			}
+			properties.load(propertiesData);
+	
+			// Ensure PostgreSQL Driver is loaded
+			Class.forName("org.postgresql.Driver");
+	
+			String mpnTableName = properties.getProperty("MPNDetailsTable");
+			String relTableName = properties.getProperty("ConnectionTable");
+			String attributes = properties.getProperty("Attribute_MPN_All");
+			String[] attributeValues = attributes.split(",");
+			Map<String, String> attributeMap = new HashMap<>();
+			Map<String, String> displayNamesMap = new HashMap<>();
+	
+			// Populate attribute maps
+			for (String attr : attributeValues) {
+				String[] attrValues = attr.split("\\|");
+				String key = attrValues[0].trim();
+				String value = attrValues[1].trim();
+				attributeMap.put(key, value);
+				String displayName = properties.getProperty("Attribute_" + key);
+				if (displayName != null) {
+					displayNamesMap.put(value, displayName);
+				}
+			}
+	
+			// Process selected attributes
+			if (selectedAttributes != null && !selectedAttributes.isEmpty()) {
+				String[] selected = selectedAttributes.split(",");
+				for (String selectedAttr : selected) {
+					String trimmedAttr = selectedAttr.trim();
+					if (attributeMap.containsKey(trimmedAttr)) {
+						if (allValues.length() > 0) {
+							allValues.append(", ");
+						}
+						allValues.append(attributeMap.get(trimmedAttr));
+					}
+				}
+			}
+	
+			String allAttrValues = allValues.toString();
+			String mpnidSql = "SELECT mpnid FROM " + relTableName + " WHERE partid = ?";
+			String sql = "SELECT " + allAttrValues + " FROM " + mpnTableName + " WHERE mpnid = ?";
+	
+			// Database operations
+			try (Connection conn = DriverManager.getConnection(url, user, password);
+				PreparedStatement mpnidStmt = conn.prepareStatement(mpnidSql)) {
+	
+				mpnidStmt.setString(1, partid);
+				ResultSet mpnidResult = mpnidStmt.executeQuery();
+				if (mpnidResult.next()) {
+					String mpnid = mpnidResult.getString("mpnid");
+	
+					try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+						stmt.setString(1, mpnid);
+	
+						ResultSet result = stmt.executeQuery();
+						ResultSetMetaData metaData = result.getMetaData();
+						int columnCount = metaData.getColumnCount();
+	
+						JSONArray objectDetailsArray = new JSONArray();
+	
+						// Process result set
+						while (result.next()) {
+							// Keep track of selectable and normal attributes
+							JSONArray selectablesArray = new JSONArray();
+							JSONArray attributesArray = new JSONArray();
+	
+							for (int i = 1; i <= columnCount; i++) {
+								String columnName = metaData.getColumnName(i);
+								String columnValue = result.getString(i);
+	
+								// Skip the `id` from being added to selectables or attributes
+								if (columnName.equalsIgnoreCase("id") || columnName.equalsIgnoreCase("mpnid")) {
+									continue;
+								}
+	
+								JSONObject attrObject = new JSONObject();
+								String displayName = displayNamesMap.get(columnName);
+								if (displayName == null) {
+									displayName = columnName;
+								}
+								attrObject.put("name", columnName);
+								attrObject.put("value", columnValue);
+								attrObject.put("displayname", displayName);
+	
+								if (isSelectable(columnName)) {
+									selectablesArray.put(attrObject);
+								} else {
+									attributesArray.put(attrObject);
+								}
+							}
+	
+							JSONObject objectDetails = new JSONObject();
+							objectDetails.put("selectables", selectablesArray);
+							objectDetails.put("attributes", attributesArray);
+							objectDetails.put("id", mpnid);  // Keep mpnid in the output
+	
+							objectDetailsArray.put(objectDetails);
+						}
+	
+						responseObject.put("objectdetails", objectDetailsArray);
+					}
+				} else {
+					throw new RuntimeException("No mpnid found for the provided partid.");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error fetching selected attributes", e);
+		}
+		return responseObject.toString();
 	}
-
+	
 
 
 	/**
@@ -943,52 +951,67 @@ public class PortalData {
 
         return responseObject.toString();
     }
-    
-    @GET
-    @Path("Specfile")
-    @Produces(MediaType.APPLICATION_JSON)
-    public  void main(String[] args) throws Exception{
-    	String url=System.getenv("SupplierPortalDBURL");
-		String password=System.getenv("SupplierPortalDBPassword");
-		String user= System.getenv("SupplierPortalDBUsername");
-
-    	 Properties properties = new Properties();
-    	 InputStream propertiesData = getClass().getClassLoader().getResourceAsStream("Portal.properties");
-    	 properties.load(propertiesData);
-    	 Class.forName("org.postgresql.Driver");
-    	 String filepath = properties.getProperty("Filepath");
-         File file = new File(filepath);
-         try {
-         Connection conn = DriverManager.getConnection(url, user, password);
-         FileInputStream fis = new FileInputStream(file);
-         PreparedStatement ps = conn.prepareStatement(
-             "INSERT INTO files (file_name, file_size, content_type, file_data) VALUES (?, ?, ?, ?)");
-         ps.setString(1, file.getName());
-         ps.setLong(2, file.length());
-         ps.setString(3, getFileContentType(file)); // Use a function to determine the content type
-         ps.setBinaryStream(4, fis, (int) file.length());
-
-         ps.executeUpdate();
-         System.out.println("File uploaded successfully!");
-
-         } catch (Exception e) {
-        	 e.printStackTrace();
-         }
-    }
-    
-    private static String getFileContentType(File file) {
-        // Determine the content type based on the file extension
-        String fileName = file.getName().toLowerCase();
-        if (fileName.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
-            return "application/msword";
-        } else if (fileName.endsWith(".zip")) {
-            return "application/zip";
-        } else if (fileName.endsWith(".txt")) {
-            return "text/plain";
-        }
-        return "application/octet-stream"; // Default binary file type
-    }
-
+			/**
+		* Endpoint to upload a file to the database.
+		*
+		* @throws Exception If an error occurs during the file upload process.
+		* @param file The file for which to determine the content type.
+		*/
+			@GET
+			@Path("Specfile")
+			@Produces(MediaType.APPLICATION_JSON)
+			public  void main(String[] args) throws Exception{
+				String url=System.getenv("SupplierPortalDBURL");
+				String password=System.getenv("SupplierPortalDBPassword");
+				String user= System.getenv("SupplierPortalDBUsername");
+		
+				Properties properties = new Properties();
+				InputStream propertiesData = getClass().getClassLoader().getResourceAsStream("Portal.properties");
+				properties.load(propertiesData);
+				Class.forName("org.postgresql.Driver");
+				String filepath = properties.getProperty("Filepath");
+				File file = new File(filepath);
+				try {
+				Connection conn = DriverManager.getConnection(url, user, password);
+				FileInputStream fis = new FileInputStream(file);
+				PreparedStatement ps = conn.prepareStatement(
+					"INSERT INTO files (file_name, file_size, content_type, file_data) VALUES (?, ?, ?, ?)");
+				ps.setString(1, file.getName());
+				ps.setLong(2, file.length());
+				ps.setString(3, getFileContentType(file)); // Use a function to determine the content type
+				ps.setBinaryStream(4, fis, (int) file.length());
+		
+				ps.executeUpdate();
+				System.out.println("File uploaded successfully!");
+		
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		/**
+		* Determines the content type of a file based on its extension.
+		*
+		* @param file The file for which to determine the content type.
+		* @return The content type as a string. 
+		*         Returns "application/pdf" for PDF files,
+		*         "application/msword" for Word documents,
+		*         "application/zip" for ZIP files,
+		*         "text/plain" for text files, 
+		*         and "application/octet-stream" for unknown types.
+		*/
+			private static String getFileContentType(File file) {
+				// Determine the content type based on the file extension
+				String fileName = file.getName().toLowerCase();
+				if (fileName.endsWith(".pdf")) {
+					return "application/pdf";
+				} else if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
+					return "application/msword";
+				} else if (fileName.endsWith(".zip")) {
+					return "application/zip";
+				} else if (fileName.endsWith(".txt")) {
+					return "text/plain";
+				}
+				return "application/octet-stream"; // Default binary file type
+			}
+		
 }// main class Ends

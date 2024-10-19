@@ -447,139 +447,110 @@ public class SupplierPortal {
      * @return JSON string with supplier details or an error message if no details are found
      * @throws Exception if there is an error loading properties or querying the database
      */
-    @GET
-    @Path("getSupplierDetailsByEmail")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getSupplierDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
-        // Load database credentials from environment variables
+   	@GET
+	@Path("getSupplierDetailsByEmail")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getSupplierDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
+	/* 	String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
+	    String userName = "postgres";
+		String password = "12345"; */
+        // Retrieve database credentials from environment variables
         String url = System.getenv("SupplierPortalDBURL");
         String password = System.getenv("SupplierPortalDBPassword");
         String userName = System.getenv("SupplierPortalDBUsername");
+	    // Load properties file
+	    Properties pro = new Properties();
+	    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+	    if (input == null) {
+	        throw new FileNotFoundException("sp.properties file not found.");
+	    }
+	    pro.load(input);
 
-        // Load properties file for column mappings
-        Properties pro = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
-            if (input == null) {
-                throw new FileNotFoundException("sp.properties file not found.");
-            }
-            pro.load(input);
-        }
+	    // Load column mappings for ca_suppliers_details attributes
+	    String detailsColumnsProperty = pro.getProperty("cadetails");
+	    Map<String, Map<String, String>> detailsColumnMap = new HashMap<>();
+	    for (String mapping : detailsColumnsProperty.split(",")) {
+	        String[] parts = mapping.split("\\|");
+	        if (parts.length == 2) {
+	            Map<String, String> detailMap = new HashMap<>();
+	            detailMap.put("internalName", parts[1].trim());
+	            detailMap.put("displayName", parts[0].trim());
+	            detailsColumnMap.put(parts[1].trim(), detailMap);
+	        }
+	    }
 
-        // Load column mappings for ca_suppliers_details attributes
-        String detailsColumnsProperty = pro.getProperty("casuppliersdetailsattributes");
-        Map<String, Map<String, String>> detailsColumnMap = new HashMap<>();
-        for (String mapping : detailsColumnsProperty.split(",")) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                Map<String, String> detailMap = new HashMap<>();
-                detailMap.put("internalName", parts[1].trim());
-                detailMap.put("displayName", parts[0].trim());
-                detailsColumnMap.put(parts[1].trim(), detailMap);
-            }
-        }
 
-        // Load column mappings for ca_suppliers_connection_details attributes
-        String connectionColumnsProperty = pro.getProperty("casuppliersconnectiondetailsattributes");
-        Map<String, Map<String, String>> connectionColumnMap = new HashMap<>();
-        for (String mapping : connectionColumnsProperty.split(",")) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                Map<String, String> detailMap = new HashMap<>();
-                detailMap.put("internalName", parts[1].trim());
-                detailMap.put("displayName", parts[0].trim());
-                connectionColumnMap.put(parts[1].trim(), detailMap);
-            }
-        }
+	    // Get email address from query parameter
+	    String email = uriInfo.getQueryParameters().getFirst("email");
+	    if (email == null || email.trim().isEmpty()) {
+	        return "{ \"error\": \"Missing or empty email parameter\" }";
+	    }
 
-        // Get email address from query parameter
-        String email = uriInfo.getQueryParameters().getFirst("email");
-        if (email == null || email.trim().isEmpty()) {
-            return "{ \"error\": \"Missing or empty email parameter\" }";
-        }
+	    // Query combining both person details and supplier details using JOIN
+	    String supplierDetailsQuery = "SELECT casd.acknowledge, ca.* " +
+                "FROM Supplier_Person_Details spd " +
+                "JOIN ca_suppliers_details casd ON spd.companyid = casd.companyid " +
+                "JOIN changeaction ca ON ca.caid = casd.changenumber " +
+                "WHERE spd.email_address = ?";
 
-        // SQL query to retrieve supplier details based on email
-        String supplierDetailsQuery = "SELECT casd.*, ca.state, ca.owner, ca.description " +
-                                      "FROM Supplier_Person_Details spd " +
-                                      "JOIN ca_suppliers_details casd ON spd.companyid = casd.companyid " +
-                                      "JOIN changeaction ca ON ca.caid = casd.changenumber " +
-                                      "WHERE spd.email_address = ?";
 
-        // Prepare the result as a JSON array
-        JSONArray jsonArray = new JSONArray();
-        Class.forName("org.postgresql.Driver");
+	    JSONArray jsonArray = new JSONArray();
+	    Class.forName("org.postgresql.Driver");
 
-        try (Connection conn = DriverManager.getConnection(url, userName, password);
-             PreparedStatement supplierStmt = conn.prepareStatement(supplierDetailsQuery)) {
+	    try (Connection conn = DriverManager.getConnection(url, userName, password);
+	         PreparedStatement supplierStmt = conn.prepareStatement(supplierDetailsQuery)) {
 
-            // Set the email parameter
-            supplierStmt.setString(1, email);
-            ResultSet supplierResult = supplierStmt.executeQuery();
+	        // Set the email parameter
+	        supplierStmt.setString(1, email);
+	        ResultSet supplierResult = supplierStmt.executeQuery();
 
-            // Check if result set has any rows
-            if (!supplierResult.isBeforeFirst()) {
-                return "{ \"error\": \"No supplier details found for email: " + email + "\" }";
-            }
+	        // Check if result set has any rows
+	        if (!supplierResult.isBeforeFirst()) {
+	            return "{ \"error\": \"No supplier details found for email: " + email + "\" }";
+	        }
+	        // Process result set
+	        while (supplierResult.next()) {
+	            JSONObject jsonObject = new JSONObject();
+	            JSONArray attributesArray = new JSONArray();
+	            JSONArray connectionAttributesArray = new JSONArray();
 
-            // Process result set
-            while (supplierResult.next()) {
-                JSONObject jsonObject = new JSONObject();
-                JSONArray attributesArray = new JSONArray();
-                JSONArray connectionAttributesArray = new JSONArray();
+	            // Add ca_suppliers_details attributes
+	            for (String column : detailsColumnMap.keySet()) {
+	                String columnValue = supplierResult.getString(column);
+	                if (column.equalsIgnoreCase("companyid")) {
+	                    // Skip processing the 'companyid' column
+	                    continue;
+	                }
+	                // Handle null values
+	                if (columnValue == null) {
+	                    columnValue = "";  // set default value to an empty string
+	                }
 
-                // Add ca_suppliers_details attributes
-                for (String column : detailsColumnMap.keySet()) {
-                    String columnValue = supplierResult.getString(column);
-                    if (column.equalsIgnoreCase("companyid")) {
-                        // Skip processing the 'companyid' column
-                        continue;
-                    }
-                    // Handle null values
-                    if (columnValue == null) {
-                        columnValue = "";  // Set default value to an empty string
-                    }
 
-                    JSONObject attribute = new JSONObject();
-                    Map<String, String> details = detailsColumnMap.get(column);
-                    attribute.put("displayName", details.get("displayName"));
-                    attribute.put("name", details.get("internalName"));
-                    attribute.put("value", columnValue);
-                    attributesArray.put(attribute);
-                }
+	                JSONObject attribute = new JSONObject();
+	                Map<String, String> details = detailsColumnMap.get(column);
+	                attribute.put("displayName", details.get("displayName"));
+	                attribute.put("name", details.get("internalName"));
+	                attribute.put("value", columnValue);
+	                attributesArray.put(attribute);
+	            }
+	            // Add ca_suppliers_connection_details attributes
+	            jsonObject.put("attributes", attributesArray);
+	            jsonObject.put("connectionattributes", connectionAttributesArray);
+	        
+	            JSONObject idObject = new JSONObject();
+	            idObject.put("caid: " + supplierResult.getString("caid"),jsonObject);  // Use companyid as the key
+	            jsonArray.put(idObject);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
+	    }
 
-                // Add ca_suppliers_connection_details attributes
-                for (String column : connectionColumnMap.keySet()) {
-                    String columnValue = supplierResult.getString(column);
-                    if (columnValue != null) {  // Check if the value exists
-                        JSONObject attribute = new JSONObject();
-                        Map<String, String> details = connectionColumnMap.get(column);
-                        attribute.put("displayName", details.get("displayName"));
-                        attribute.put("name", details.get("internalName"));
-                        attribute.put("value", columnValue);
-                        connectionAttributesArray.put(attribute);
-                    }
-                }
-
-                jsonObject.put("attributes", attributesArray);
-                jsonObject.put("connectionattributes", connectionAttributesArray);
-
-                // Use companyid as the key for the result object
-                JSONObject idObject = new JSONObject();
-                idObject.put("companyid: " + supplierResult.getString("companyid"), jsonObject);
-                jsonArray.put(idObject);
-            }
-
-        } catch (SQLException e) {
-            // Log error for debugging
-            System.err.println("Database error: " + e.getMessage());
-            e.printStackTrace();
-            return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
-        }
-
-        // Construct final JSON object
-        JSONObject finalObject = new JSONObject();
-        finalObject.put("results", jsonArray);
-        return finalObject.toString();
-    }
+	    JSONObject finalObject = new JSONObject();
+	    finalObject.put("results", jsonArray);
+	    return finalObject.toString();
+	}
 
     /**
      * Retrieves change action details by caID.
@@ -1025,142 +996,113 @@ public class SupplierPortal {
      * @return JSON string containing supplier and deviation details or an error message.
      * @throws Exception If any issue occurs during data retrieval.
      */
-    @GET
-    @Path("getDevaitionDetailsByEmail")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getDevaitionDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
-        // Retrieve environment variables for database connection
-        String url = System.getenv("SupplierPortalDBURL");
+  	@GET
+		@Path("getDevaitionDetailsByEmail")
+		@Produces(MediaType.APPLICATION_JSON)
+		public String getDevaitionDetailsByEmail(@Context UriInfo uriInfo) throws Exception {
+/* 			String url = "jdbc:postgresql://localhost:5432/Supplierportal1";
+		    String userName = "postgres";
+			String password = "12345"; */
+			   String url = System.getenv("SupplierPortalDBURL");
         String password = System.getenv("SupplierPortalDBPassword");
         String userName = System.getenv("SupplierPortalDBUsername");
 
-        // Load properties file
-        Properties pro = new Properties();
-        InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
-        if (input == null) {
-            throw new FileNotFoundException("sp.properties file not found.");
-        }
-        pro.load(input);
+		    // Load properties file
+		    Properties pro = new Properties();
+		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+		    if (input == null) {
+		        throw new FileNotFoundException("sp.properties file not found.");
+		    }
+		    pro.load(input);
 
-        // Load column mappings for ca_suppliers_details attributes
-        String detailsColumnsProperty = pro.getProperty("casuppliersdetailsattributes");
-        String supplierTable = pro.getProperty("supplierpersondetailsTable");
-        String caSupplierTable = pro.getProperty("casuppliersdetailsTable");
-        String devaitionTable = pro.getProperty("deviationTable");
+		    // Load column mappings for ca_suppliers_details attributes
+		    String detailsColumnsProperty = pro.getProperty("Deviation_Details");
+		    String supplierTable = pro.getProperty("supplierpersondetailsTable");
+		    String caSupplierTable = pro.getProperty("casuppliersdetailsTable");
+		    String devaitionTable = pro.getProperty("deviationTable");
+		    Map<String, Map<String, String>> detailsColumnMap = new HashMap<>();
+		    for (String mapping : detailsColumnsProperty.split(",")) {
+		        String[] parts = mapping.split("\\|");
+		        if (parts.length == 2) {
+		            Map<String, String> detailMap = new HashMap<>();
+		            detailMap.put("internalName", parts[1].trim());
+		            detailMap.put("displayName", parts[0].trim());
+		            detailsColumnMap.put(parts[1].trim(), detailMap);
+		        }
+		    }
 
-        // Parse details columns and map internal names to display names
-        Map<String, Map<String, String>> detailsColumnMap = new HashMap<>();
-        for (String mapping : detailsColumnsProperty.split(",")) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                Map<String, String> detailMap = new HashMap<>();
-                detailMap.put("internalName", parts[1].trim());
-                detailMap.put("displayName", parts[0].trim());
-                detailsColumnMap.put(parts[1].trim(), detailMap);
-            }
-        }
+		    // Get email address from query parameter
+		    String email = uriInfo.getQueryParameters().getFirst("email");
+		    if (email == null || email.trim().isEmpty()) {
+		        return "{ \"error\": \"Missing or empty email parameter\" }";
+		    }
 
-        // Load column mappings for ca_suppliers_connection_details attributes
-        String connectionColumnsProperty = pro.getProperty("casuppliersconnectiondetailsattributes");
-        Map<String, Map<String, String>> connectionColumnMap = new HashMap<>();
-        for (String mapping : connectionColumnsProperty.split(",")) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                Map<String, String> detailMap = new HashMap<>();
-                detailMap.put("internalName", parts[1].trim());
-                detailMap.put("displayName", parts[0].trim());
-                connectionColumnMap.put(parts[1].trim(), detailMap);
-            }
-        }
+		    // Query combining both person details and supplier details using JOIN
+		    String supplierDetailsQuery = "SELECT casd.acknowledge, dev.* " +
+	                "FROM " + supplierTable + " spd " +
+	                "JOIN " + caSupplierTable + " casd ON spd.companyid = casd.companyid " +
+	                "JOIN "+ devaitionTable + "  dev ON dev.deviationid = casd.changenumber " +
+	                "WHERE spd.email_address = ?";
 
-        // Get email address from query parameter
-        String email = uriInfo.getQueryParameters().getFirst("email");
-        if (email == null || email.trim().isEmpty()) {
-            return "{ \"error\": \"Missing or empty email parameter\" }";
-        }
 
-        // SQL query combining both person and supplier details using JOIN
-        String supplierDetailsQuery = "SELECT casd.*, dev.state, dev.owner, dev.description " +
-                "FROM " + supplierTable + " spd " +
-                "JOIN " + caSupplierTable + " casd ON spd.companyid = casd.companyid " +
-                "JOIN " + devaitionTable + " dev ON dev.deviationid = casd.changenumber " +
-                "WHERE spd.email_address = ?";
+		    JSONArray jsonArray = new JSONArray();
+		    Class.forName("org.postgresql.Driver");
 
-        JSONArray jsonArray = new JSONArray();
+		    try (Connection conn = DriverManager.getConnection(url, userName, password);
+		         PreparedStatement supplierStmt = conn.prepareStatement(supplierDetailsQuery)) {
 
-        // Load PostgreSQL driver
-        Class.forName("org.postgresql.Driver");
+		        // Set the email parameter
+		        supplierStmt.setString(1, email);
+		        ResultSet supplierResult = supplierStmt.executeQuery();
 
-        // Database connection and query execution
-        try (Connection conn = DriverManager.getConnection(url, userName, password);
-             PreparedStatement supplierStmt = conn.prepareStatement(supplierDetailsQuery)) {
+		        // Check if result set has any rows
+		        if (!supplierResult.isBeforeFirst()) {
+		            return "{ \"error\": \"No supplier details found for email: " + email + "\" }";
+		        }
+		        // Process result set
+		        while (supplierResult.next()) {
+		            JSONObject jsonObject = new JSONObject();
+		            JSONArray attributesArray = new JSONArray();
+		            JSONArray connectionAttributesArray = new JSONArray();
 
-            // Set the email parameter
-            supplierStmt.setString(1, email);
-            ResultSet supplierResult = supplierStmt.executeQuery();
+		            // Add ca_suppliers_details attributes
+		            for (String column : detailsColumnMap.keySet()) {
+		                String columnValue = supplierResult.getString(column);
+		                if (column.equalsIgnoreCase("companyid")) {
+		                    // Skip processing the 'companyid' column
+		                    continue;
+		                }
+		                // Handle null values
+		                if (columnValue == null) {
+		                    columnValue = "";  // set default value to an empty string
+		                }
 
-            // Check if result set has any rows
-            if (!supplierResult.isBeforeFirst()) {
-                return "{ \"error\": \"No supplier details found for email: " + email + "\" }";
-            }
 
-            // Process result set and build JSON response
-            while (supplierResult.next()) {
-                JSONObject jsonObject = new JSONObject();
-                JSONArray attributesArray = new JSONArray();
-                JSONArray connectionAttributesArray = new JSONArray();
+		                JSONObject attribute = new JSONObject();
+		                Map<String, String> details = detailsColumnMap.get(column);
+		                attribute.put("displayName", details.get("displayName"));
+		                attribute.put("name", details.get("internalName"));
+		                attribute.put("value", columnValue);
+		                attributesArray.put(attribute);
+		            }
+		            // Add ca_suppliers_connection_details attributes
+		            jsonObject.put("attributes", attributesArray);
+		        
+		            JSONObject idObject = new JSONObject();
+		            idObject.put("deviationid: " + supplierResult.getString("deviationid"),jsonObject);  // Use companyid as the key
+		            jsonArray.put(idObject);
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		        return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
+		    }
 
-                // Add ca_suppliers_details attributes
-                for (String column : detailsColumnMap.keySet()) {
-                    String columnValue = supplierResult.getString(column);
-                    if (column.equalsIgnoreCase("companyid")) {
-                        // Skip processing the 'companyid' column
-                        continue;
-                    }
-                    // Handle null values
-                    if (columnValue == null) {
-                        columnValue = "";  // set default value to an empty string
-                    }
+		    JSONObject finalObject = new JSONObject();
+		    finalObject.put("results", jsonArray);
+		    return finalObject.toString();
+		}
 
-                    JSONObject attribute = new JSONObject();
-                    Map<String, String> details = detailsColumnMap.get(column);
-                    attribute.put("displayName", details.get("displayName"));
-                    attribute.put("name", details.get("internalName"));
-                    attribute.put("value", columnValue);
-                    attributesArray.put(attribute);
-                }
-
-                // Add ca_suppliers_connection_details attributes
-                for (String column : connectionColumnMap.keySet()) {
-                    String columnValue = supplierResult.getString(column);
-                    if (columnValue != null) {  // Check if the value exists
-                        JSONObject attribute = new JSONObject();
-                        Map<String, String> details = connectionColumnMap.get(column);
-                        attribute.put("displayName", details.get("displayName"));
-                        attribute.put("name", details.get("internalName"));
-                        attribute.put("value", columnValue);
-                        connectionAttributesArray.put(attribute);
-                    }
-                }
-
-                jsonObject.put("attributes", attributesArray);
-                jsonObject.put("connectionattributes", connectionAttributesArray);
-
-                JSONObject idObject = new JSONObject();
-                idObject.put("companyid: " + supplierResult.getString("companyid"), jsonObject);  // Use companyid as the key
-                jsonArray.put(idObject);
-            }
-        } catch (SQLException e) {
-            // Debugging output in case of database error
-            System.err.println("Database error: " + e.getMessage());
-            return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
-        }
-
-        // Construct final JSON object for the response
-        JSONObject finalObject = new JSONObject();
-        finalObject.put("results", jsonArray);
-        return finalObject.toString();
-    }
+	
 	
     /**
      * Retrieves deviation details for the specified deviation ID.
