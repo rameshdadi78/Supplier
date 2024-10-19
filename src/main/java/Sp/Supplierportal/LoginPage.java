@@ -874,47 +874,48 @@ public class LoginPage {
 			* @param password the password to export
 			* @param status   the status to export
 			*/
-			public static void ExportData(String username, String password, String status) {
+			public static void ExportData(String username,String password,String status) {
 				String filepath = "C:\\Users\\LENOVO\\Desktop\\statusFile.txt";
 				File file = new File(filepath);
-				
-				// Create FileWriter and BufferedWriter outside the condition
-				FileWriter fw = null;
-				BufferedWriter bw = null;
-			
-				try {
-					// Check if the file exists
-					if (!file.exists()) {
-						file.createNewFile();
-						System.out.println("New file created");
-					}
-			
-					// Initialize FileWriter and BufferedWriter
-					fw = new FileWriter(file, true);
-					bw = new BufferedWriter(fw);
-			
-					// Write data to the file
-					bw.write(username);
-					bw.write("\t");
-					bw.write(password);
-					bw.write("\t");
-					bw.write(status);
-					bw.newLine();
-			
-					System.out.println("Data added");
-			
-				} catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					// Close resources in the finally block to ensure they are closed
+				if(file.exists()) {
+		
 					try {
-						if (bw != null) {
-							bw.close();
-						}
-						if (fw != null) {
-							fw.close();
-						}
-					} catch (IOException e) {
+						FileWriter fw = new FileWriter(file,true);
+						BufferedWriter bw = new BufferedWriter(fw);
+						
+						fw.write(username);
+						fw.write("\t");
+						fw.write(password);
+						fw.write("\t");
+						fw.write(status);
+						
+						fw.write("\n");
+						
+						
+						fw.close();
+						System.out.println("Data Added");
+					}catch(Exception e) {
+						e.printStackTrace();
+					}
+				}
+				else {
+					try {
+						file.createNewFile();
+						System.out.println("new File Created");
+						FileWriter fw = new FileWriter(file,true);
+						BufferedWriter bw = new BufferedWriter(fw);
+						
+						bw.write(username);
+						bw.write("\t");
+						bw.write(password);
+						bw.write("\t");
+						bw.write(status);
+						
+						bw.newLine();
+						
+						bw.close();
+						System.out.println("data Added");
+					}catch(Exception e) {
 						e.printStackTrace();
 					}
 				}
