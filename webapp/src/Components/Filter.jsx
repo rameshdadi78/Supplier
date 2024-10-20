@@ -161,7 +161,7 @@ const handleDeleteView = async (viewName) => {
       const storedUserName = localStorage.getItem('username');
 
       try {
-          const response = await fetch("/webapi/myresource/deleteView", {
+         const response = await fetch(`${API_BASE_URL}/myresource/deleteView`, {
               method: "POST",
               headers: {
                   "Content-Type": "application/json",
@@ -332,9 +332,7 @@ if (viewExists) {
   };
 // console.log(preferenceData);
   try {
-    const response = await fetch(
-      "/webapi/myresource/updatePre",
-      {
+   const response = await fetch(`${API_BASE_URL}/myresource/updatePre`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -516,9 +514,7 @@ useEffect(() => {
       };
   
       try {
-        const response = await fetch(
-          "/webapi/myresource/edit",
-          {
+      const response = await fetch(`${API_BASE_URL}/myresource/edit`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
