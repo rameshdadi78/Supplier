@@ -1615,14 +1615,14 @@ public class SupplierPortal {
      * @return JSON response with affected items or error message.
      * @throws Exception if any error occurs during data fetching.
      */
+
 	 	@GET
 		@Path("getcaaffectedItems")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCaAffectedItems(@Context UriInfo uriInfo) throws Exception {
-        String url = System.getenv("SupplierPortalDBURL");
-        String password = System.getenv("SupplierPortalDBPassword");
-        String userName = System.getenv("SupplierPortalDBUsername");
-
+		String url=System.getenv("SupplierPortalSPDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
 		    // Load properties file
 		    Properties pro = new Properties();
@@ -1665,7 +1665,15 @@ public class SupplierPortal {
 		    if (caId == null || caId.trim().isEmpty()) {
 		        return "{ \"error\": \"Missing or empty email parameter\" }";
 		    }
-
+		    // Build the SQL query dynamically based on provided query parameters
+//		    String caDetailsQuery =  "SELECT epd.*, csd.supplier_visibility, csd.supplier_item_visibility, csd.supplier_spec_visibility " +
+//		            "FROM " + tablename + " epd " +
+//		            "JOIN " + supplierTable + " csd " +
+//		            "ON epd.name = csd.name " +
+//		            "WHERE (? = epd.changenumber OR " +
+//            "     epd.changenumber LIKE CONCAT('%|', ?, '|%') OR " + // in the middle
+//            "     epd.changenumber LIKE CONCAT(?, '|%') OR " +      // at the beginning
+//            "     epd.changenumber LIKE CONCAT('%|', ?))";          // at the end
 
 		    String caDetailsQuery =  "SELECT epd.*, csd.supplier_visibility, csd.supplier_item_visibility, csd.supplier_spec_visibility " +
                     "FROM " + tablename + " epd " +
@@ -1698,7 +1706,7 @@ public class SupplierPortal {
 
 		        while (Result.next()) {
 		            String id = Result.getString("id"); // Extract the Id value
-		           
+		            
 		            JSONObject jsonObject = new JSONObject();
 		            JSONArray basicAttributesArray = new JSONArray();
 		            JSONArray attributesArray = new JSONArray();
@@ -1716,7 +1724,10 @@ public class SupplierPortal {
 
 		            // Add other attributes
 		            for (String column : columnMap.keySet()) {
-
+//		                if (column.equalsIgnoreCase("partid")) {
+//		                    // Skip processing the 'Id' column
+//		                    continue;
+//		                }
 
 		                JSONObject attribute = new JSONObject();
 		                String columnValue = Result.getString(column);
@@ -1742,7 +1753,8 @@ public class SupplierPortal {
 		    finalObject.put("results", jsonArray);
 		    return finalObject.toString();
 	 }
-    /**
+
+	    /**
      * Fetches supplier data for given object IDs and change action ID (caid).
      *
      * @param inputJson JSON string containing object IDs and caid.
