@@ -52,10 +52,11 @@ const MainSection = ({
   );
   const username = localStorage.getItem("username");
   const [selectedRowId, setSelectedRowId] = useState(null);
-  const [Visibility, setVisibility] = useState("");
+  const [Visibility, setVisibility] = useState([]);
+  const [isVisibility, setIsVisibility] = useState("");
   const [specVisibility, setSpecVisibility] = useState("");
   const [itemVisibility, setitemVisibility] = useState("");
-
+  const [isvisible, setIsvisible] = useState("");
   useEffect(() => {
     const fetchSupplierName = async () => {
       try {
@@ -115,28 +116,34 @@ const MainSection = ({
               acc[attr.name] = attr.value;
               return acc;
             }, {});
+            const isvisiabledata = data[key].visibilityValue;
+            setVisibility({ [objId]: isvisiabledata });
+          
 
             // Assuming visibility is now handled differently and is always true
             const isPartIncluded = visiblePartIdsArray.includes(objId);
-
-            // Directly including parts that are in the visiblePartIds array
-            // if (isPartIncluded) {
-            if (!includedObjectIds.has(objId)) {
-              includedObjectIds.add(objId);
-              // Assuming you still want to update some visibility states
-              setVisibility(true); // Always set to true since visibility fetch is removed
-              setSpecVisibility(visibleSpec);
-              setitemVisibility(visibleItem);
-              return { objectId: objId, ...basicAttributes, ...attributes };
+            if (
+              (isvisiabledata &&
+                (visiblePartIdsArray.length === 0 || isPartIncluded)) ||
+              (!isvisiabledata && isPartIncluded)
+            ) {
+              if (!includedObjectIds.has(objId)) {
+                includedObjectIds.add(objId);
+                setIsVisibility(Visibility);
+                setSpecVisibility(visibleSpec);
+                setitemVisibility(visibleItem);
+                return { objectId: objId, ...basicAttributes, ...attributes };
+              }
             }
-            // }
             return null;
           })
         );
 
-        // const filteredCombinedData = combinedData.filter(part => part !== null);
-        setData(combinedData);
-        setFilteredData(combinedData);
+        const filteredCombinedData = combinedData.filter(
+          (part) => part !== null
+        );
+        setData(filteredCombinedData);
+        setFilteredData(filteredCombinedData);
 
         const displayNames = fetchDatas.results.reduce((acc, data) => {
           const key = Object.keys(data)[0];
@@ -223,6 +230,7 @@ const MainSection = ({
           .map((key) => ({
             field: key,
             headerName: displayNameMapping[key] || key,
+            valueFormatter: ({ value }) => value,
             filter: true,
             tooltipField: key,
           }))
