@@ -109,7 +109,6 @@ public class SupplierPortal {
 	 * </ul>
 	 */
 
-
 	@GET
 	@Path("parts")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -182,6 +181,7 @@ public class SupplierPortal {
 	            String id = result.getString("id");
 	            // Proceed only if partid is not empty
 	            if (id != null && !id.trim().isEmpty()) {
+		    boolean isVisible = false;
 	                // Fetch additional data based on suppliername
 	                if (supplierName != null && !supplierName.trim().isEmpty()) {
 	                    String mpnQuery = "SELECT ct.partid " +
@@ -194,65 +194,27 @@ public class SupplierPortal {
 	                        mpnStmt.setString(2, supplierName);
 	                        ResultSet mpnResult = mpnStmt.executeQuery();
 	                        if (mpnResult.next()) {
-	                            JSONObject jsonObject = new JSONObject();
-	                            JSONArray basicAttributesArray = new JSONArray();
-	                            JSONArray attributesArray = new JSONArray();
-	                            // Add basic attributes
-	                            String objectId = null;
-	                            for (String column : basicAttributeMap.keySet()) {
-	                                JSONObject attribute = new JSONObject();
-	                                String columnValue = result.getString(column);
-	                                Map<String, String> details = basicAttributeMap.get(column);
-	                                attribute.put("displayName", details.get("displayName"));
-	                                attribute.put("name", details.get("internalName"));
-	                                attribute.put("value", columnValue);
-	                                basicAttributesArray.put(attribute);
-	                            }
-
-	                            // Add other attributes
-	                            for (String column : columnMap.keySet()) {
-	                            	 
-//	                                if (column.equalsIgnoreCase("Id")) {
-//	                                    continue; // Skip processing the 'Id' column
-//	                                }
-	                               System.out.println("objectId--------"+objectId);
-	                                JSONObject attribute = new JSONObject();
-	                                String columnValue = result.getString(column);
-	                                Map<String, String> details = columnMap.get(column);
-	                                
-	                                attribute.put("displayName", details.get("displayName"));
-	                                attribute.put("name", details.get("internalName"));
-	                                attribute.put("value", columnValue);
-	                                if ("Id".equals(details.get("displayName"))) {
-	                                	objectId = columnValue; // Insert the objectId
-	                                }
-	                                attributesArray.put(attribute);
-	                            }
-
-	                            jsonObject.put("basicAttributes", basicAttributesArray);
-	                            jsonObject.put("attributes", attributesArray);
-	                            JSONObject idObject = new JSONObject();
-	                            idObject.put("objectId: " + objectId, jsonObject); // Use Id as the key
-	                            jsonArray.put(idObject);
-	                            
+	                            isVisible = true;  // Set visibility to true if mpnQuery matches
 	                        }
 	                    }
-	                } else {
-	                    // If no suppliername is provided, just add the basic data
-	                    JSONObject jsonObject = new JSONObject();
-	                    JSONArray basicAttributesArray = new JSONArray();
-	                    JSONArray attributesArray = new JSONArray();
-						String objectId = null;
-	                    // Add basic attributes
-	                    for (String column : basicAttributeMap.keySet()) {
-	                        JSONObject attribute = new JSONObject();
-	                        String columnValue = result.getString(column);
-	                        Map<String, String> details = basicAttributeMap.get(column);
-	                        attribute.put("displayName", details.get("displayName"));
-	                        attribute.put("name", details.get("internalName"));
-	                        attribute.put("value", columnValue);
-	                        basicAttributesArray.put(attribute);
-	                    }
+	                }
+
+	                // Collect attributes regardless of mpnQuery success
+	                JSONObject jsonObject = new JSONObject();
+	                JSONArray basicAttributesArray = new JSONArray();
+	                JSONArray attributesArray = new JSONArray();
+	                String objectId = null;
+
+	                // Add basic attributes
+	                for (String column : basicAttributeMap.keySet()) {
+	                    JSONObject attribute = new JSONObject();
+	                    String columnValue = result.getString(column);
+	                    Map<String, String> details = basicAttributeMap.get(column);
+	                    attribute.put("displayName", details.get("displayName"));
+	                    attribute.put("name", details.get("internalName"));
+	                    attribute.put("value", columnValue);
+	                    basicAttributesArray.put(attribute);
+	                }
 
 	                    // Add other attributes
 	                    for (String column : columnMap.keySet()) {
@@ -272,12 +234,13 @@ public class SupplierPortal {
 	                        attributesArray.put(attribute);
 	                    }
 
-	                    jsonObject.put("basicAttributes", basicAttributesArray);
-	                    jsonObject.put("attributes", attributesArray);
-	                    JSONObject idObject = new JSONObject();
-		                   idObject.put("objectId: " + objectId, jsonObject); // Use Id as the key
-		                  jsonArray.put(idObject);
-	                }
+	                jsonObject.put("basicAttributes", basicAttributesArray);
+	                jsonObject.put("attributes", attributesArray);
+	                jsonObject.put("visibilityValue", isVisible);
+	                JSONObject idObject = new JSONObject();
+	                idObject.put("objectId: " + objectId, jsonObject);
+	                
+	                jsonArray.put(idObject);
 	            }
 	        }
 	    } catch (Exception e) {
@@ -296,6 +259,7 @@ public class SupplierPortal {
 	    finalObject.put("results", jsonArray);
 	    return finalObject.toString();
 	}
+
 
 
 
@@ -1181,9 +1145,10 @@ public class SupplierPortal {
 	    String mpnTable = pro.getProperty("MpnTable");
 	    String connectionTable = pro.getProperty("MpnconnectionTable");
 	    String deviationTable = pro.getProperty("Ca_supplier_Table");
+	    String supplierConnectionTable = pro.getProperty("Ca_supplier_Table");
 
 	    JSONArray jsonArray = new JSONArray();
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String postgresPass=System.getenv("SupplierPortalDBPassword");
 		String postgresUser= System.getenv("SupplierPortalDBUsername");
 	    Class.forName("org.postgresql.Driver");
@@ -1194,7 +1159,7 @@ public class SupplierPortal {
 
 	        // Build SQL based on field
 	        if (field.equalsIgnoreCase("Everything")) {
-	            StringBuilder sqlBuilder = new StringBuilder("SELECT partid, name, type FROM " + ecPartTable + " WHERE ");
+	            StringBuilder sqlBuilder = new StringBuilder("SELECT id, name, type FROM " + ecPartTable + " WHERE ");
 	            List<String> conditions = new ArrayList<>();
 
 	            // Generate LIKE condition for all columns
@@ -1215,12 +1180,12 @@ public class SupplierPortal {
 	            }
 
 	        } else if (field.equalsIgnoreCase("name")) {
-	            sql = "SELECT partid, name, type FROM " + ecPartTable + " WHERE name ILIKE ?";
+	            sql = "SELECT id, name, type FROM " + ecPartTable + " WHERE name ILIKE ?";
 	            ps = con.prepareStatement(sql);
 	            ps.setString(1, "%" + text + "%");
 
 	        } else if (field.equalsIgnoreCase("Ids")) {
-	            sql = "SELECT partid, type FROM " + ecPartTable + " WHERE partid ILIKE ?";
+	            sql = "SELECT id, type FROM " + ecPartTable + " WHERE id ILIKE ?";
 	            ps = con.prepareStatement(sql);
 	            ps.setString(1, "%" + text + "%");
 	        }
@@ -1230,7 +1195,7 @@ public class SupplierPortal {
 	            Map<String, List<String>> partsByType = new HashMap<>();
 
 	            while (set.next()) {
-	                String partid = set.getString("partid");
+	                String partid = set.getString("id");
 	                String type = set.getString("type");
 
 	                // Check visibility for each partid
@@ -1240,7 +1205,7 @@ public class SupplierPortal {
 	                // Step 1: Check in MPN and connection tables
 	                String visibilitySql = "SELECT ct.partid FROM " + connectionTable + " ct " +
 	                        "JOIN " + mpnTable + " mt ON ct.mpnid = mt.mpnid " +
-	                        "WHERE ct.partid = ? AND mt.manufacturername = ?";
+	                        "WHERE ct.partid = ? AND mt.CompanyName = ?";
 
 	                try (PreparedStatement stmt = con.prepareStatement(visibilitySql)) {
 	                    stmt.setString(1, partid);
@@ -1253,33 +1218,25 @@ public class SupplierPortal {
 
 	                // Step 2: Check in deviation table for spec/item visibility
 	                if (!isVisible) {
-	                    String deviationSql = "SELECT acknowledge, supplier_item_visibility, supplier_spec_visibility " +
-	                            "FROM " + deviationTable + " WHERE supplier_item_visibility LIKE ? " +
+	                    String supplierSql = "SELECT acknowledge, supplier_item_visibility, supplier_spec_visibility " +
+	                            "FROM " + supplierConnectionTable + " WHERE supplier_item_visibility LIKE ? " +
 	                            "OR supplier_spec_visibility LIKE ?";
 
 	                    String pattern = "%" + partid + "%";
 
-	                    try (PreparedStatement deviationStmt = con.prepareStatement(deviationSql)) {
-	                        deviationStmt.setString(1, pattern);
-	                        deviationStmt.setString(2, pattern);
+	                    try (PreparedStatement supStmt = con.prepareStatement(supplierSql)) {
+	                        supStmt.setString(1, pattern);
+	                        supStmt.setString(2, pattern);
 
-	                        try (ResultSet deviationRs = deviationStmt.executeQuery()) {
-	                            while (deviationRs.next()) {
-	                                String acknowledge = deviationRs.getString("acknowledge");
-	                                String spec = deviationRs.getString("supplier_spec_visibility");
-	                                String item = deviationRs.getString("supplier_item_visibility");
+	                        try (ResultSet suppRs = supStmt.executeQuery()) {
+	                            while (suppRs.next()) {
+	                                String acknowledge = suppRs.getString("acknowledge");
+	                                String spec = suppRs.getString("supplier_spec_visibility");
+	                                String item = suppRs.getString("supplier_item_visibility");
 
 	                                specVisible = spec != null && spec.contains(partid);
 	                                itemVisible = item != null && item.contains(partid);
 									
-									if (spec != null && spec.contains(partid)) {
-										matchingItemPartId = partid;
-									} else if (item != null && item.contains(partid)) {
-										matchingSpecPartId = partid;
-									} else {
-										matchingSpecPartId = null;
-										matchingItemPartId = null;
-									}
 	                                if ("yes".equalsIgnoreCase(acknowledge)) {
 	                                    isVisible = true;
 	                                    break;
@@ -1320,6 +1277,7 @@ public class SupplierPortal {
 	                .build();
 	    }
 	}
+
     /**
      * Retrieves supplier details by email.
      * Combines person details with supplier information based on the given email.
@@ -2528,6 +2486,15 @@ public class SupplierPortal {
 		@Consumes(MediaType.APPLICATION_JSON)
 		@Produces(MediaType.APPLICATION_JSON)
     public Response getDataCA(String jsonInput) throws IOException {
+			Properties pro = new Properties();
+			InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+			if (input == null) {
+				throw new FileNotFoundException("sp.properties file not found.");
+			}
+			pro.load(input);
+
+			String changeActionTable = pro.getProperty("catable");
+			String supplierTable = pro.getProperty("Ca_supplier_Table");
         if (jsonInput == null || jsonInput.trim().isEmpty() || !jsonInput.trim().startsWith("{")) {
 
 		        JSONObject errorResponse = new JSONObject();
@@ -2584,11 +2551,11 @@ public class SupplierPortal {
 
 		        String sql = "";
 		        if (field.equalsIgnoreCase("ids")) {
-		            sql = "SELECT caid, type FROM changeaction WHERE caid ILIKE ?";
+		            sql = "SELECT ChangeNumber, type FROM " + changeActionTable + " WHERE ChangeNumber ILIKE ?";
 		        } else if (field.equalsIgnoreCase("name")) {
-		            sql = "SELECT caid, name, type FROM changeaction WHERE name ILIKE ? AND name ILIKE 'CA-%'";
+		            sql = "SELECT ChangeNumber, name, type FROM " + changeActionTable + " WHERE name ILIKE ? AND name ILIKE 'CA-%'";
 		        } else if (field.equalsIgnoreCase("Everything")) {
-		            sql = "SELECT column_name FROM information_schema.columns WHERE table_name = 'changeaction'";
+		            sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + changeActionTable + "'";
 		        }
 
 		        try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -2608,11 +2575,11 @@ public class SupplierPortal {
 		                        ResultSet innerRs = ps2.executeQuery();
 
 		                        while (innerRs.next()) {
-		                            String caid = innerRs.getString("caid");
+		                            String caid = innerRs.getString("ChangeNumber");
 		                            String type = innerRs.getString("type");
 
 		                            // Check if the caid exists in ca_suppliers_details
-		                            String checkSql = "SELECT COUNT(*) FROM ca_suppliers_details WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+		                            String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Details  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
 		                            try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
 		                                checkPs.setString(1, caid);
 		                                ResultSet checkSet = checkPs.executeQuery();
@@ -2625,11 +2592,11 @@ public class SupplierPortal {
 		                }
 		            } else {
 		                while (rs.next()) {
-		                    String caid = rs.getString("caid");
+		                    String caid = rs.getString("changenumber");
 		                    String type = rs.getString("type");
 
 		                    // Check if the caid exists in ca_suppliers_details
-		                    String checkSql = "SELECT COUNT(*) FROM ca_suppliers_details WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+		                    String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Detail  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
 		                    try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
 		                        checkPs.setString(1, caid);
 		                        ResultSet checkSet = checkPs.executeQuery();
@@ -2677,151 +2644,161 @@ public class SupplierPortal {
      * @throws IOException if an error occurs during processing.
      */
 		@POST
-		@Path("searchForDeviation")
-		@Consumes(MediaType.APPLICATION_JSON)
-		@Produces(MediaType.APPLICATION_JSON)
-		public Response getDataDev(String s) throws IOException {
-		    JSONObject finalResponse = new JSONObject();
-		    JSONArray jsonArray = new JSONArray();
-		    boolean hasError = false;
+			@Path("searchForDeviation")
+			@Consumes(MediaType.APPLICATION_JSON)
+			@Produces(MediaType.APPLICATION_JSON)
+			public Response getDataDev(String s) throws IOException {
+			    JSONObject finalResponse = new JSONObject();
+			    JSONArray jsonArray = new JSONArray();
+			    boolean hasError = false;
+				Properties pro = new Properties();
+				InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+				if (input == null) {
+					throw new FileNotFoundException("sp.properties file not found.");
+				}
+				pro.load(input);
 
-		    // Input validation
-		    if (s == null || s.trim().isEmpty() || !s.trim().startsWith("{")) {
-		        finalResponse.put("status", "fail");
-		        finalResponse.put("message", "Invalid JSON input.");
-		        hasError = true;
-		    } else {
-		        JSONObject json = new JSONObject(s);
-		        String text = json.optString("text", "%");
-		        String field = json.optString("field");
+				String devtablename = pro.getProperty("deviationTable");
+				String suppliersDetailsTable = pro.getProperty("casuppliersdetailsTable");
 
-		        // Validate 'Name' field input
-		        if (field.equalsIgnoreCase("Name")) {
-		            if (!text.startsWith("DEV-") || text.contains("*00*")) {
-		                finalResponse.put("status", "fail");
-		                finalResponse.put("message", "For 'Name' field, the text must start with 'DEV-' and cannot contain '*00*'.");
-		                hasError = true;
-		            }
-		        }
+			    // Input validation
+			    if (s == null || s.trim().isEmpty() || !s.trim().startsWith("{")) {
+			        finalResponse.put("status", "fail");
+			        finalResponse.put("message", "Invalid JSON input.");
+			        hasError = true;
+			    } else {
+			        JSONObject json = new JSONObject(s);
+			        String text = json.optString("text", "%");
+			        String field = json.optString("field");
 
-		        // Ensure input text is at least 3 characters long
-		        if (text.equals("*") || text.length() < 3) {
-		            finalResponse.put("status", "fail");
-		            finalResponse.put("message", "Please provide at least 3 characters or digits for the search.");
-		            hasError = true;
-		        }
+			        // Validate 'Name' field input
+			        if (field.equalsIgnoreCase("Name")) {
+			            if (!text.startsWith("DEV-") || text.contains("*00*")) {
+			                finalResponse.put("status", "fail");
+			                finalResponse.put("message", "For 'Name' field, the text must start with 'DEV-' and cannot contain '*00*'.");
+			                hasError = true;
+			            }
+			        }
 
-		        // Prepare wildcard text
-		        text = text.replace("*", "%");
+			        // Ensure input text is at least 3 characters long
+			        if (text.equals("*") || text.length() < 3) {
+			            finalResponse.put("status", "fail");
+			            finalResponse.put("message", "Please provide at least 3 characters or digits for the search.");
+			            hasError = true;
+			        }
 
-		        if (!hasError) {
-		               // Database connection setup
-        String url = System.getenv("SupplierPortalDBURL");
-        String postgresPass = System.getenv("SupplierPortalDBPassword");
-        String postgresUser = System.getenv("SupplierPortalDBUsername");
+			        // Prepare wildcard text
+			        text = text.replace("*", "%");
 
-		            try {
-		                Class.forName("org.postgresql.Driver");
-		                try (Connection con = DriverManager.getConnection(url, postgresUser, postgresPass)) {
-		                    String sql = "";
+			        if (!hasError) {
+						String url = System.getenv("SupplierPortalDBURL");
+						String postgresPass = System.getenv("SupplierPortalDBPassword");
+						String postgresUser = System.getenv("SupplierPortalDBUsername");
 
-		                    // SQL query based on the input field
-		                    if (field.equalsIgnoreCase("ids")) {
-		                        sql = "SELECT deviationid, type FROM deviation_details WHERE caid ILIKE ?";
-		                    } else if (field.equalsIgnoreCase("name")) {
-		                        sql = "SELECT deviationid, name, type FROM deviation_details WHERE name ILIKE ? AND name ILIKE 'DEV-%'";
-		                    } else if (field.equalsIgnoreCase("Everything")) {
-		                        sql = "SELECT column_name FROM information_schema.columns WHERE table_name = 'deviation_details'";
-		                    }
+			            try {
+			                Class.forName("org.postgresql.Driver");
+			                try (Connection con = DriverManager.getConnection(url, postgresUser, postgresPass)) {
+			                    String sql = "";
 
-		                    try (PreparedStatement ps = con.prepareStatement(sql)) {
-		                        if (field.equalsIgnoreCase("ids") || field.equalsIgnoreCase("name")) {
-		                            ps.setString(1, text);  // Set search text
-		                        }
+			                    // SQL query based on the input field
+			                    if (field.equalsIgnoreCase("ids")) {
+			                        sql = "SELECT deviationid, type FROM " + devtablename + " WHERE caid ILIKE ?";
+			                    } else if (field.equalsIgnoreCase("name")) {
+			                        sql = "SELECT deviationid, name, type FROM " + devtablename + " WHERE name ILIKE ? AND name ILIKE 'DEV-%'";
+			                    } else if (field.equalsIgnoreCase("Everything")) {
+			                        sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ' " + devtablename + "'";
+			                    }
 
-		                        ResultSet rs = ps.executeQuery();
-		                        Map<String, List<String>> caidsByType = new HashMap<>();
+			                    try (PreparedStatement ps = con.prepareStatement(sql)) {
+			                        if (field.equalsIgnoreCase("ids") || field.equalsIgnoreCase("name")) {
+			                            ps.setString(1, text);  // Set search text
+			                        }
 
-		                        if (field.equalsIgnoreCase("Everything")) {
-		                            // Handle 'Everything' query logic
-		                            while (rs.next()) {
-		                                String columnName = rs.getString("column_name");
-		                                String query = "SELECT deviationid, type FROM deviation_details WHERE " + columnName + " ILIKE ?";
+			                        ResultSet rs = ps.executeQuery();
+			                        Map<String, List<String>> caidsByType = new HashMap<>();
 
-		                                try (PreparedStatement ps2 = con.prepareStatement(query)) {
-		                                    ps2.setString(1, text);
-		                                    ResultSet innerRs = ps2.executeQuery();
+			                        if (field.equalsIgnoreCase("Everything")) {
+			                            // Handle 'Everything' query logic
+			                            while (rs.next()) {
+			                                String columnName = rs.getString("column_name");
+			                                String query = "SELECT deviationid, type FROM " + devtablename + " WHERE " + columnName + " ILIKE ?";
 
-		                                    while (innerRs.next()) {
-		                                        String caid = innerRs.getString("deviationid");
-		                                        String type = innerRs.getString("type");
+			                                try (PreparedStatement ps2 = con.prepareStatement(query)) {
+			                                    ps2.setString(1, text);
+			                                    ResultSet innerRs = ps2.executeQuery();
 
-		                                        // Check for acknowledgment in 'ca_suppliers_details'
-		                                        String checkSql = "SELECT COUNT(*) FROM ca_suppliers_details WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
-		                                        try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
-		                                            checkPs.setString(1, caid);
-		                                            ResultSet checkSet = checkPs.executeQuery();
+			                                    while (innerRs.next()) {
+			                                        String caid = innerRs.getString("deviationid");
+			                                        String type = innerRs.getString("type");
 
-		                                            if (checkSet.next() && checkSet.getInt(1) > 0) {
-		                                                caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
-		                                            }
-		                                        }
-		                                    }
-		                                }
-		                            }
-		                        } else {
-		                            // Handle 'ids' and 'name' field queries
-		                            while (rs.next()) {
-		                                String caid = rs.getString("deviationid");
-		                                String type = rs.getString("type");
+			                                        // Check for acknowledgment in 'ca_suppliers_details'
+			                                        String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                        try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+			                                            checkPs.setString(1, caid);
+			                                            ResultSet checkSet = checkPs.executeQuery();
 
-		                                String checkSql = "SELECT COUNT(*) FROM ca_suppliers_details WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
-		                                try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
-		                                    checkPs.setString(1, caid);
-		                                    ResultSet checkSet = checkPs.executeQuery();
+			                                            if (checkSet.next() && checkSet.getInt(1) > 0) {
+			                                                caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                            }
+			                                        }
+			                                    }
+			                                }
+			                            }
+			                        } else {
+			                            // Handle 'ids' and 'name' field queries
+			                            while (rs.next()) {
+			                                String caid = rs.getString("deviationid");
+			                                String type = rs.getString("type");
 
-		                                    if (checkSet.next() && checkSet.getInt(1) > 0) {
-		                                        caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
-		                                    }
-		                                }
-		                            }
-		                        }
+			                                String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+			                                    checkPs.setString(1, caid);
+			                                    ResultSet checkSet = checkPs.executeQuery();
 
-		                        // Construct JSON output in the common format
-		                        for (Map.Entry<String, List<String>> entry : caidsByType.entrySet()) {
-		                            String type = entry.getKey();
-		                            List<String> caids = entry.getValue();
+			                                    if (checkSet.next() && checkSet.getInt(1) > 0) {
+			                                        caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                    }
+			                                }
+			                            }
+			                        }
 
-		                            JSONObject typeObject = new JSONObject();
-		                            typeObject.put("deviationid", String.join("|", caids)); // Joining caids with '|'
+			                        // Construct JSON output in the common format
+			                        for (Map.Entry<String, List<String>> entry : caidsByType.entrySet()) {
+			                            String type = entry.getKey();
+			                            List<String> caids = entry.getValue();
 
-		                            // Create the final object for this type and add it to the results array
-		                            JSONObject jsonObject = new JSONObject();
-		                            jsonObject.put("type: " + type, typeObject);
+			                            JSONObject typeObject = new JSONObject();
+			                            typeObject.put("deviationid", String.join("|", caids)); // Joining caids with '|'
 
-		                            jsonArray.put(jsonObject); // Add to the common results array
-		                        }
+			                            // Create the final object for this type and add it to the results array
+			                            JSONObject jsonObject = new JSONObject();
+			                            jsonObject.put("type: " + type, typeObject);
 
-		                        finalResponse.put("results", jsonArray);
-		                    }
-		                }
-		            } catch (Exception e) {
-		                e.printStackTrace();
-		                finalResponse.put("status", "fail");
-		            }
-		        }
-		    }
+			                            jsonArray.put(jsonObject); // Add to the common results array
+			                        }
 
-		    // Return appropriate response
-		    if (hasError) {
-		        return Response.status(Response.Status.BAD_REQUEST)
-		                .entity(finalResponse.toString())
-		                .type(MediaType.APPLICATION_JSON)
-		                .build();
-		    } else {
-		        return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
-		    }
-		}
+			                        finalResponse.put("results", jsonArray);
+			                    }
+			                }
+			            } catch (Exception e) {
+			                e.printStackTrace();
+			                finalResponse.put("status", "fail");
+			            }
+			        }
+			    }
+
+			    // Return appropriate response
+			    if (hasError) {
+			        return Response.status(Response.Status.BAD_REQUEST)
+			                .entity(finalResponse.toString())
+			                .type(MediaType.APPLICATION_JSON)
+			                .build();
+			    } else {
+			        return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
+			    }
+			}
+
+
 
 
 
@@ -2920,109 +2897,158 @@ public class SupplierPortal {
 
 		    return jsonResponse.toString();
 		}
+			@POST
+			@Path("searchForDeviation")
+			@Consumes(MediaType.APPLICATION_JSON)
+			@Produces(MediaType.APPLICATION_JSON)
+			public Response getDataDev(String s) throws IOException {
+			    JSONObject finalResponse = new JSONObject();
+			    JSONArray jsonArray = new JSONArray();
+			    boolean hasError = false;
+				Properties pro = new Properties();
+				InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+				if (input == null) {
+					throw new FileNotFoundException("sp.properties file not found.");
+				}
+				pro.load(input);
 
-		@POST
-		@Path("searchAll")
-		@Consumes(MediaType.APPLICATION_JSON)
-		@Produces(MediaType.APPLICATION_JSON)
-		public Response searchAll(String s) {
-		    JSONObject finalResponse = new JSONObject();
-		    JSONArray jsonArray = new JSONArray();
-		    
-		    List<String> parts = new ArrayList<>();
-		    List<String> ca = new ArrayList<>();
-		    List<String> deviation = new ArrayList<>();
-		    
-		    // Calling getDataPart
-		    try {
-		        Response partResponse = getData(s);
-		        JSONObject partJson = new JSONObject(partResponse.getEntity().toString());
-		        
-		        if (partJson.has("results")) {
-		            JSONArray partResults = partJson.getJSONArray("results");
-		            for (int i = 0; i < partResults.length(); i++) {
-		                JSONObject partObject = partResults.getJSONObject(i);
-		                JSONObject partDetails = partObject.getJSONObject("type: Part");
-		                String partId = partDetails.getString("partid");
-		                boolean itemVisible = partDetails.optBoolean("itemVisible", false); // Default to false if not present
-		                boolean specVisible = partDetails.optBoolean("specVisible", false); // Default to false if not present
-		                boolean isVisible = partDetails.optBoolean("isVisible", false); 
-		                if (!parts.contains(partId)) {
-						parts.add(partId+"|"+itemVisible+"|"+specVisible+"|"+isVisible); // Collect unique partids
-		                }
-		            }
-		        }
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		        finalResponse.put("status", "fail");
-		        finalResponse.put("message", "Error occurred while fetching parts.");
-		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
-		    }
+				String devtablename = pro.getProperty("deviationTable");
+				String suppliersDetailsTable = pro.getProperty("casuppliersdetailsTable");
 
-		    // Calling getDataCA
-		    try {
-		        Response caResponse = getDataCA(s);
-		        JSONObject caJson = new JSONObject(caResponse.getEntity().toString());
-		        
-		        if (caJson.has("results")) {
-		            JSONArray caResults = caJson.getJSONArray("results");
-		            for (int i = 0; i < caResults.length(); i++) {
-		                JSONObject caObject = caResults.getJSONObject(i);
-		                JSONObject caDetails = caObject.getJSONObject("type: Change Action");
-		                String caIdString = caDetails.getString("caid");
-		                String[] caIds = caIdString.split("\\|"); // Split by "|" separator
-		                for (String caId : caIds) {
-		                    caId = caId.trim(); // Optional: trim whitespace
-		                    if (!ca.contains(caId) && !caId.isEmpty()) {
-		                        ca.add(caId); // Collect unique caids
-		                    }
-		                }
-		            }
-		        }
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		        finalResponse.put("status", "fail");
-		        finalResponse.put("message", "Error occurred while fetching CA.");
-		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
-		    }
+			    // Input validation
+			    if (s == null || s.trim().isEmpty() || !s.trim().startsWith("{")) {
+			        finalResponse.put("status", "fail");
+			        finalResponse.put("message", "Invalid JSON input.");
+			        hasError = true;
+			    } else {
+			        JSONObject json = new JSONObject(s);
+			        String text = json.optString("text", "%");
+			        String field = json.optString("field");
 
-		    // Calling getDataDev
-		    try {
-		        Response devResponse = getDataDev(s);
-		        JSONObject devJson = new JSONObject(devResponse.getEntity().toString());
-		        
-		        if (devJson.has("results")) {
-		            JSONArray devResults = devJson.getJSONArray("results");
-		            for (int i = 0; i < devResults.length(); i++) {
-		                JSONObject devObject = devResults.getJSONObject(i);
-		                JSONObject devDetails = devObject.getJSONObject("type: Deviation");
-		                String deviationIdString = devDetails.getString("deviationid");
-		                String[] deviationIds = deviationIdString.split("\\|"); // Split by "|" separator
-		                for (String deviationId : deviationIds) {
-		                    deviationId = deviationId.trim(); // Optional: trim whitespace
-		                    if (!deviation.contains(deviationId) && !deviationId.isEmpty()) {
-		                        deviation.add(deviationId); // Collect unique deviationids
-		                    }
-		                }
-		            }
-		        }
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		        finalResponse.put("status", "fail");
-		        finalResponse.put("message", "Error occurred while fetching deviations.");
-		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
-		    }
+			        // Validate 'Name' field input
+			        if (field.equalsIgnoreCase("Name")) {
+			            if (!text.startsWith("DEV-") || text.contains("*00*")) {
+			                finalResponse.put("status", "fail");
+			                finalResponse.put("message", "For 'Name' field, the text must start with 'DEV-' and cannot contain '*00*'.");
+			                hasError = true;
+			            }
+			        }
 
-		    // Construct final JSON output
-		    JSONObject combinedObject = new JSONObject();
-		    combinedObject.put("parts", parts);
-		    combinedObject.put("ca", ca);
-		    combinedObject.put("deviation", deviation);
+			        // Ensure input text is at least 3 characters long
+			        if (text.equals("*") || text.length() < 3) {
+			            finalResponse.put("status", "fail");
+			            finalResponse.put("message", "Please provide at least 3 characters or digits for the search.");
+			            hasError = true;
+			        }
 
-		    jsonArray.put(combinedObject);
-		    finalResponse.put("results", jsonArray);
+			        // Prepare wildcard text
+			        text = text.replace("*", "%");
 
-		    return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
+			        if (!hasError) {
+						String url = System.getenv("SupplierPortalDBURL");
+						String postgresPass = System.getenv("SupplierPortalDBPassword");
+						String postgresUser = System.getenv("SupplierPortalDBUsername");
+
+			            try {
+			                Class.forName("org.postgresql.Driver");
+			                try (Connection con = DriverManager.getConnection(url, postgresUser, postgresPass)) {
+			                    String sql = "";
+
+			                    // SQL query based on the input field
+			                    if (field.equalsIgnoreCase("ids")) {
+			                        sql = "SELECT deviationid, type FROM " + devtablename + " WHERE caid ILIKE ?";
+			                    } else if (field.equalsIgnoreCase("name")) {
+			                        sql = "SELECT deviationid, name, type FROM " + devtablename + " WHERE name ILIKE ? AND name ILIKE 'DEV-%'";
+			                    } else if (field.equalsIgnoreCase("Everything")) {
+			                        sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ' " + devtablename + "'";
+			                    }
+
+			                    try (PreparedStatement ps = con.prepareStatement(sql)) {
+			                        if (field.equalsIgnoreCase("ids") || field.equalsIgnoreCase("name")) {
+			                            ps.setString(1, text);  // Set search text
+			                        }
+
+			                        ResultSet rs = ps.executeQuery();
+			                        Map<String, List<String>> caidsByType = new HashMap<>();
+
+			                        if (field.equalsIgnoreCase("Everything")) {
+			                            // Handle 'Everything' query logic
+			                            while (rs.next()) {
+			                                String columnName = rs.getString("column_name");
+			                                String query = "SELECT deviationid, type FROM " + devtablename + " WHERE " + columnName + " ILIKE ?";
+
+			                                try (PreparedStatement ps2 = con.prepareStatement(query)) {
+			                                    ps2.setString(1, text);
+			                                    ResultSet innerRs = ps2.executeQuery();
+
+			                                    while (innerRs.next()) {
+			                                        String caid = innerRs.getString("deviationid");
+			                                        String type = innerRs.getString("type");
+
+			                                        // Check for acknowledgment in 'ca_suppliers_details'
+			                                        String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                        try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+			                                            checkPs.setString(1, caid);
+			                                            ResultSet checkSet = checkPs.executeQuery();
+
+			                                            if (checkSet.next() && checkSet.getInt(1) > 0) {
+			                                                caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                            }
+			                                        }
+			                                    }
+			                                }
+			                            }
+			                        } else {
+			                            // Handle 'ids' and 'name' field queries
+			                            while (rs.next()) {
+			                                String caid = rs.getString("deviationid");
+			                                String type = rs.getString("type");
+
+			                                String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+			                                    checkPs.setString(1, caid);
+			                                    ResultSet checkSet = checkPs.executeQuery();
+
+			                                    if (checkSet.next() && checkSet.getInt(1) > 0) {
+			                                        caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                    }
+			                                }
+			                            }
+			                        }
+
+			                        // Construct JSON output in the common format
+			                        for (Map.Entry<String, List<String>> entry : caidsByType.entrySet()) {
+			                            String type = entry.getKey();
+			                            List<String> caids = entry.getValue();
+
+			                            JSONObject typeObject = new JSONObject();
+			                            typeObject.put("deviationid", String.join("|", caids)); // Joining caids with '|'
+
+			                            // Create the final object for this type and add it to the results array
+			                            JSONObject jsonObject = new JSONObject();
+			                            jsonObject.put("type: " + type, typeObject);
+
+			                            jsonArray.put(jsonObject); // Add to the common results array
+			                        }
+
+			                        finalResponse.put("results", jsonArray);
+			                    }
+			                }
+			            } catch (Exception e) {
+			                e.printStackTrace();
+			                finalResponse.put("status", "fail");
+			            }
+			        }
+			    }
+
+			    // Return appropriate response
+			    if (hasError) {
+			        return Response.status(Response.Status.BAD_REQUEST)
+			                .entity(finalResponse.toString())
+			                .type(MediaType.APPLICATION_JSON)
+			                .build();
+			    } else {
+			        return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
+			    }
+			}
 		}
-
-}
