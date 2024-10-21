@@ -52,16 +52,7 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
           };
         });
       
-        // Add View Details button to the columns
-        generatedColumns.push({
-          name: 'View Details',
-          cell: row => (
-            <button className='dev_button'>
-              <img src={propertiesicon} alt="View Details" />
-            </button>
-          ),
-          ignoreRowClick: true
-        });
+
       
         setColumnsData(generatedColumns);
       }, [DevTableData]);
