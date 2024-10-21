@@ -333,7 +333,7 @@ const MainSection = ({
 
       const userName = localStorage.getItem("username");
       try {
-        const response = await fetch("/webapi/myresource/newjwt", {
+        const response = await fetch(`${API_BASE_URL}/myresource/newjwt`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
