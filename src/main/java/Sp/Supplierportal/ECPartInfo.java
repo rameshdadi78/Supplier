@@ -55,102 +55,122 @@ public class ECPartInfo {
      * @return A JSON string containing change action details and affected item attributes.
      * @throws Exception If any error occurs during database interaction or file loading.
      */
-    @GET
-    @Path("changeActions")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
-        String url = System.getenv("SupplierPortalDBURL");
-        String password = System.getenv("SupplierPortalDBPassword");
-        String userName = System.getenv("SupplierPortalDBUsername");
 
-        Properties pro = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties")) {
-            if (input == null) {
-                throw new FileNotFoundException("CAMappingNames.properties file not found.");
-            }
-            pro.load(input);
-        }
-
-        String allAffectedItemsTable = pro.getProperty("all_AffectedItems_Table");
-        String changeActionTable = pro.getProperty("change_Action_Table");
-        String[] changeActionColumnNames = pro.getProperty("change_Action_Attributes_Mapping").split(",");
-        String[] allAffectedItemsColumnNames = pro.getProperty("allAffectedItems_Attributes_Mapping").split(",");
-
-        // Map to store column names and their display names
-        Map<String, String> columnMap = new HashMap<>();
-        for (String mapping : allAffectedItemsColumnNames) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                columnMap.put(parts[1].trim(), parts[0].trim());
-            }
-        }
-
-        Map<String, String> changeActionMap = new HashMap<>();
-        for (String mapping : changeActionColumnNames) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                changeActionMap.put(parts[1].trim(), parts[0].trim());
-            }
-        }
-
-        Map<String, String> attributeDisplayNames = new HashMap<>();
-        for (String key : pro.stringPropertyNames()) {
-            if (key.startsWith("Attribute_")) {
-                String columnName = key.substring("Attribute_".length()).toLowerCase();
-                attributeDisplayNames.put(columnName, pro.getProperty(key));
-            }
-        }
-
-        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-        String partid = queryParams.getFirst("partid");
-
-        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(allAffectedItemsTable);
-        if (partid != null && !partid.isEmpty()) {
-            sql.append(" WHERE topartid = '").append(partid.replace("'", "''")).append("'");
-        }
-
-        JSONArray jsonArray = new JSONArray();
-        try (Connection conn = DriverManager.getConnection(url, userName, password);
-             Statement stmt = conn.createStatement();
-             ResultSet result = stmt.executeQuery(sql.toString())) {
-
-            while (result.next()) {
-                String currentPartid = result.getString("topartid");
-                String caid = result.getString("caid");
-
-                JSONObject jsonObject = new JSONObject();
-
-                // Fetch the change action data and relationship data
-                JSONObject changeActionData = fetchChangeActionData(conn, changeActionTable, caid, changeActionMap, attributeDisplayNames);
-                JSONObject relationshipData = fetchRelationshipData(conn, allAffectedItemsTable, currentPartid, columnMap);
-
-                // Merge the change action data into the main JSON object
-                for (String key : changeActionData.keySet()) {
-                    jsonObject.put(key, changeActionData.get(key));
-                }
-
-                // Merge the relationship data into the main JSON object
-                for (String key : relationshipData.keySet()) {
-                    jsonObject.put(key, relationshipData.get(key));
-                }
-
-                // Add the partid
-                jsonObject.put("partid", currentPartid);
-
-                // Create the final object structure with caid
-                JSONObject idObject = new JSONObject();
-                idObject.put("caid: " + caid, jsonObject);
-                jsonArray.put(idObject);
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching change action details: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        JSONObject finalObject = new JSONObject();
-        finalObject.put("objectdetails", jsonArray);
-        return finalObject.toString();
+	@GET
+@Path("changeActions")
+@Produces(MediaType.APPLICATION_JSON)
+public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
+/*     String url = "jdbc:postgresql://localhost:5432/supplierportal1";
+    String userName = "postgres";
+    String password = "Manoj123";
+ */
+	String url=System.getenv("SupplierPortalDBURL");
+	String password=System.getenv("SupplierPortalDBPassword");
+	String userName= System.getenv("SupplierPortalDBUsername");
+		
+    // Load properties file
+    Properties pro = new Properties();
+    InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties");
+    if (input == null) {
+        throw new FileNotFoundException("CAMappingNames.properties file not found.");
     }
+    pro.load(input);
+
+    String allAffectedItemsTable = pro.getProperty("all_AffectedItems_Table");
+    String changeActionTable = pro.getProperty("change_Action_Table");
+    String[] changeActionColumnNames = pro.getProperty("change_Action_Attributes_Mapping").split(",");
+    String[] allAffectedItemsColumnNames = pro.getProperty("allAffectedItems_Attributes_Mapping").split(",");
+
+    // Map to store the column names and their display names
+    Map<String, String> columnMap = new HashMap<>();
+    for (String mapping : allAffectedItemsColumnNames) {
+        String[] parts = mapping.split("\\|");
+        if (parts.length == 2) {
+            columnMap.put(parts[1].trim(), parts[0].trim());
+        }
+    }
+
+    Map<String, String> changeActionMap = new HashMap<>();
+    for (String mapping : changeActionColumnNames) {
+        String[] parts = mapping.split("\\|");
+        if (parts.length == 2) {
+            changeActionMap.put(parts[1].trim(), parts[0].trim());
+        }
+    }
+
+    Map<String, String> attributeDisplayNames = new HashMap<>();
+    for (String key : pro.stringPropertyNames()) {
+        if (key.startsWith("Attribute_")) {
+            String columnName = key.substring("Attribute_".length()).toLowerCase();
+            attributeDisplayNames.put(columnName, pro.getProperty(key));
+        }
+    }
+
+    // Get query parameters
+    MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+    String partid = queryParams.getFirst("partid");
+
+    // Construct the SQL query
+    StringBuilder sql = new StringBuilder("SELECT * FROM ").append(allAffectedItemsTable);
+    if (partid != null && !partid.isEmpty()) {
+        sql.append(" WHERE id = '").append(partid.replace("'", "''")).append("'");
+    }
+
+    ResultSet result = null;
+    JSONArray jsonArray = new JSONArray();
+    try {
+        Class.forName("org.postgresql.Driver");
+	        Connection conn = DriverManager.getConnection(url, userName, password);
+	        Statement stmt = conn.createStatement();
+	        result = stmt.executeQuery(sql.toString());
+
+        result = stmt.executeQuery(sql.toString());
+
+        while (result.next()) {
+            String currentPartid = result.getString("id");
+            String caid = result.getString("ChangeNumber");
+
+            JSONObject jsonObject = new JSONObject();
+
+            // Fetch the change action data and relationship data
+            JSONObject changeActionData = fetchChangeActionData(conn, changeActionTable, caid, changeActionMap, attributeDisplayNames);
+            JSONObject relationshipData = fetchRelationshipData(conn, allAffectedItemsTable, currentPartid, columnMap);
+
+            // Directly merge the change action data into the main JSON object
+            for (String key : changeActionData.keySet()) {
+                jsonObject.put(key, changeActionData.get(key));
+            }
+
+            // Directly merge the relationship data into the main JSON object
+            for (String key : relationshipData.keySet()) {
+                jsonObject.put(key, relationshipData.get(key));
+            }
+
+            // Add the partid after other entries
+            jsonObject.put("partid", currentPartid);
+
+            // Create the final object structure with caid
+            JSONObject idObject = new JSONObject();
+            idObject.put("caid: " + caid, jsonObject);
+            jsonArray.put(idObject);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        if (result != null) {
+            try {
+                result.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    JSONObject finalObject = new JSONObject();
+    finalObject.put("objectdetails", jsonArray);
+    return finalObject.toString();
+}
+
 
     /**
      * Fetches the change action data from the given table based on CAID.
@@ -163,43 +183,47 @@ public class ECPartInfo {
      * @return A JSON object containing change action data.
      * @throws SQLException If any SQL error occurs.
      */
-    private JSONObject fetchChangeActionData(Connection conn, String tableName, String caid,
-                                             Map<String, String> columnMappings, Map<String, String> attributeDisplayNames) throws SQLException {
-        JSONObject changeActionData = new JSONObject();
-        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE caid = '").append(caid.replace("'", "''")).append("'");
 
-        try (Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-             ResultSet resultSet = stmt.executeQuery(sql.toString())) {
+	// Fetch CAID from ChangeAction table for the given partid
+	private JSONObject fetchChangeActionData(Connection conn, String tableName, String caid, Map<String, String> columnMappings, Map<String, String> attributeDisplayNames) throws SQLException {
+	    JSONObject changeActionData = new JSONObject();
+	    StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ChangeNumber = '").append(caid.replace("'", "''")).append("'");
 
-            if (resultSet.next()) {
-                JSONArray basicAttributesArray = new JSONArray();
-                JSONArray attributesArray = new JSONArray();
+	    Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+	    ResultSet resultSet = stmt.executeQuery(sql.toString());
 
-                for (String column : columnMappings.keySet()) {
-                    // Exclude certain attributes
-                    if (!Arrays.asList("caid", "direction", "revision").contains(column.toLowerCase())) {
-                        JSONObject attribute = new JSONObject();
-                        String displayName = attributeDisplayNames.getOrDefault(column, columnMappings.get(column));
-                        String value = resultSet.getString(column);
+	    if (resultSet.next()) {
+	        JSONArray basicAttributesArray = new JSONArray();
+	        JSONArray attributesArray = new JSONArray();
 
-                        attribute.put("displayName", displayName);
-                        attribute.put("name", column);
-                        attribute.put("value", value);
+	      
+        for (String column : columnMappings.keySet()) {
+            // Exclude certain attributes
+            if (!Arrays.asList("ChangeNumber", "direction", "revision").contains(column.toLowerCase())) {
+                JSONObject attribute = new JSONObject();
+                String displayName = attributeDisplayNames.getOrDefault(column, columnMappings.get(column));
+                String value = resultSet.getString(column);
 
-                        if (Arrays.asList("name", "type", "state", "synopsis", "project", "description", "owner").contains(column)) {
-                            basicAttributesArray.put(attribute);
-                        } else {
-                            attributesArray.put(attribute);
-                        }
-                    }
+                attribute.put("displayName", displayName);
+                attribute.put("name", column);
+                attribute.put("value", value);
+
+                if (Arrays.asList("name","type","state", "synopsis", "project", "description","owner").contains(column)) {
+                    basicAttributesArray.put(attribute);
+                } else {
+                    attributesArray.put(attribute);
                 }
-
-                changeActionData.put("BasicAttributesOfChangeAction", basicAttributesArray);
-                changeActionData.put("attributesOfCA", attributesArray);
             }
         }
-        return changeActionData;
-    }
+
+
+	        changeActionData.put("BasicAttributesOfChangeAction", basicAttributesArray);
+	        changeActionData.put("attributesOfCA", attributesArray);
+	    }
+
+	    resultSet.close();
+	    return changeActionData;
+	}
 
     /**
      * Fetches relationship attributes for the given part ID.
@@ -211,37 +235,44 @@ public class ECPartInfo {
      * @return A JSON object containing relationship data.
      * @throws SQLException If any SQL error occurs.
      */
-    private JSONObject fetchRelationshipData(Connection conn, String tableName, String topartid,
-                                             Map<String, String> columnMap) throws SQLException {
-        JSONObject relationshipData = new JSONObject();
-        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE topartid = '").append(topartid.replace("'", "''")).append("'");
 
-        try (Statement stmt = conn.createStatement();
-             ResultSet resultSet = stmt.executeQuery(sql.toString())) {
+	// Fetch relationship attributes for the given partid
+	private JSONObject fetchRelationshipData(Connection conn, String tableName, String topartid, Map<String, String> columnMap) throws SQLException {
+	    JSONObject relationshipData = new JSONObject();
+	    System.out.println("tableName-------"+tableName);
+	    StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE id = '").append(topartid.replace("'", "''")).append("'");
 
-            while (resultSet.next()) {
-                JSONArray attributesArray = new JSONArray();
-                for (String column : columnMap.keySet()) {
-                    // Exclude certain columns
-                    if (Arrays.asList("caid", "relationshipid", "topartid", "direction").contains(column.toLowerCase())) {
-                        continue;
-                    }
+	    Statement stmt = conn.createStatement();
+	    ResultSet resultSet = stmt.executeQuery(sql.toString());
 
-                    JSONObject attribute = new JSONObject();
-                    String displayName = columnMap.get(column);
-                    String value = resultSet.getString(column);
+	    while (resultSet.next()) {
+	        JSONArray attributesArray = new JSONArray();
+	        for (String column : columnMap.keySet()) {
+	            // Exclude certain columns
+	            if ("caid".equalsIgnoreCase(column) || "relId".equalsIgnoreCase(column) ||
+	                "relatedobjid".equalsIgnoreCase(column) || "direction".equalsIgnoreCase(column)) {
+	                continue;
+	            }
 
-                    attribute.put("displayName", displayName);
-                    attribute.put("name", column);
-                    attribute.put("value", value);
+	            JSONObject attribute = new JSONObject();
+	            String displayName = columnMap.get(column);
+	            String value = resultSet.getString(column);
 
-                    attributesArray.put(attribute);
-                }
-                relationshipData.put("relattributesOfAffectedItems", attributesArray);
-            }
-        }
-        return relationshipData;
-    }
+	            attribute.put("displayName", displayName);
+	            attribute.put("name", column);
+	            attribute.put("value", value);
+
+	            attributesArray.put(attribute);
+	        }
+	        relationshipData.put("relattributesOfAffectedItems", attributesArray);
+	    }
+
+	    resultSet.close();
+	    stmt.close(); // Ensure the Statement is also closed to avoid resource leaks
+	    return relationshipData;
+	}
+
+	
 	
     /**
      * Retrieves specification details based on part ID.
@@ -250,16 +281,22 @@ public class ECPartInfo {
      * @return JSON response with specification details.
      * @throws Exception If any error occurs during the execution.
      */
-    @GET
-    @Path("specifications")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getSpecificationDetails(@Context UriInfo uriInfo) throws Exception {
-        String url = System.getenv("SupplierPortalDBURL");
-        String password = System.getenv("SupplierPortalDBPassword");
-        String userName = System.getenv("SupplierPortalDBUsername");
+
+	@GET
+	@Path("specifications")
+	 @Produces(MediaType.APPLICATION_JSON)
+	   public String getSpecificationDetails(@Context UriInfo uriInfo) throws Exception {
+		String url=System.getenv("SupplierPortalDBURL");
+		String password=System.getenv("SupplierPortalDBPassword");
+		String userName= System.getenv("SupplierPortalDBUsername");
 
         // Load properties file
-        Properties pro = loadPropertiesFile();
+        Properties pro = new Properties();
+        InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties");
+        if (input == null) {
+            throw new FileNotFoundException("CAMappingNames.properties file not found.");
+        }
+        pro.load(input);
 
         String specRelationshipTable = pro.getProperty("Specifications_Relationship_table");
         String specificationTable = pro.getProperty("Specification_Table");
@@ -267,115 +304,27 @@ public class ECPartInfo {
         String[] specRelationshipColumnNames = pro.getProperty("Specification_Relationship_Attributes_Mapping").split(",");
 
         // Ensure property values are correctly loaded
-        validatePropertyValues(specRelationshipTable, specificationTable);
-
-        // Map to store the column names and their display names
-        Map<String, String> columnMap = createColumnMap(specRelationshipColumnNames);
-        Map<String, String> specificationMap = createColumnMap(specificationColumnNames);
-        Map<String, String> attributeDisplayNames = loadAttributeDisplayNames(pro);
-
-        // Get query parameters
-        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-        String partid = queryParams.getFirst("partid");
-
-        // SQL query construction
-        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(specRelationshipTable);
-        if (partid != null && !partid.trim().isEmpty()) {
-            sql.append(" WHERE topartid = '").append(partid.replace("'", "''")).append("'");
-        }
-
-        // Execute query and build response
-        return executeSpecificationQuery(url, userName, password, sql.toString(), specificationTable, specificationMap, columnMap, attributeDisplayNames);
-    }
-
-    /**
-     * Executes the SQL query to fetch specification details and build the response.
-     *
-     * @param url Database URL.
-     * @param userName Database username.
-     * @param password Database password.
-     * @param sql SQL query string.
-     * @param specificationTable Name of the specification table.
-     * @param specificationMap Mapping of specification columns.
-     * @param columnMap Mapping of relationship columns.
-     * @param attributeDisplayNames Mapping of column display names.
-     * @return JSON string response.
-     * @throws Exception If any error occurs during the execution.
-     */
-    private String executeSpecificationQuery(String url, String userName, String password, String sql, String specificationTable, Map<String, String> specificationMap, Map<String, String> columnMap, Map<String, String> attributeDisplayNames) throws Exception {
-        ResultSet result = null;
-        JSONArray jsonArray = new JSONArray();
-        try (Connection conn = DriverManager.getConnection(url, userName, password);
-             Statement stmt = conn.createStatement()) {
-            result = stmt.executeQuery(sql);
-
-            while (result.next()) {
-                String currentPartid = result.getString("topartid");
-                String specificationid = result.getString("specificationid");
-
-                JSONObject jsonObject = new JSONObject();
-
-                // Fetch the specification data and relationship data
-                JSONObject specificationData = fetchSpecificationData(conn, specificationTable, specificationid, specificationMap, attributeDisplayNames);
-                JSONArray relationshipData = fetchSpecRelationshipData(conn, sql, currentPartid, columnMap);
-
-                jsonObject.put("BasicAttributesOfSpecification", specificationData.getJSONArray("BasicAttributesOfSpecification"));
-                jsonObject.put("attributesOfSpec", specificationData.getJSONArray("attributesOfSpec"));
-                jsonObject.put("relattributesOfSpec", relationshipData);
-                jsonObject.put("partid", currentPartid);
-
-                // Create the final object structure with specificationid
-                JSONObject idObject = new JSONObject();
-                idObject.put("specificationid: " + specificationid, jsonObject);
-                jsonArray.put(idObject);
-            }
-        } finally {
-            if (result != null) {
-                result.close();
-            }
-        }
-
-        JSONObject finalObject = new JSONObject();
-        finalObject.put("objectdetails", jsonArray);
-        return finalObject.toString();
-    }
-
-    /**
-     * Loads properties from the file.
-     *
-     * @return Loaded properties.
-     * @throws IOException If the properties file is not found or cannot be read.
-     */
-    private Properties loadPropertiesFile() throws IOException {
-        Properties pro = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties")) {
-            if (input == null) {
-                throw new FileNotFoundException("CAMappingNames.properties file not found.");
-            }
-            pro.load(input);
-        }
-        return pro;
-    }
-
-    /**
-     * Ensures that property values for tables are loaded.
-     *
-     * @param specRelationshipTable Name of the specification relationship table.
-     * @param specificationTable Name of the specification table.
-     */
-    private void validatePropertyValues(String specRelationshipTable, String specificationTable) {
         if (specRelationshipTable == null || specificationTable == null) {
             throw new IllegalArgumentException("Required table names are not found in properties file.");
         }
-    }
 
-    /**
-     * Loads attribute display names from properties.
-     *
-     * @param pro Properties object.
-     * @return Mapping of attribute display names.
-     */
-    private Map<String, String> loadAttributeDisplayNames(Properties pro) {
+        // Map to store the column names and their display names
+        Map<String, String> columnMap = new HashMap<>();
+        for (String mapping : specRelationshipColumnNames) {
+            String[] parts = mapping.split("\\|");
+            if (parts.length == 2) {
+                columnMap.put(parts[1].trim(), parts[0].trim());
+            }
+        }
+
+        Map<String, String> specificationMap = new HashMap<>();
+        for (String mapping : specificationColumnNames) {
+            String[] parts = mapping.split("\\|");
+            if (parts.length == 2) {
+                specificationMap.put(parts[1].trim(), parts[0].trim());
+            }
+        }
+
         Map<String, String> attributeDisplayNames = new HashMap<>();
         for (String key : pro.stringPropertyNames()) {
             if (key.startsWith("Attribute_")) {
@@ -383,84 +332,195 @@ public class ECPartInfo {
                 attributeDisplayNames.put(columnName, pro.getProperty(key));
             }
         }
-        return attributeDisplayNames;
-    }
 
-    /**
-     * Fetches specification data for the given specification ID.
-     *
-     * @param conn Database connection.
-     * @param tableName Name of the table.
-     * @param specificationid Specification ID.
-     * @param columnMappings Mapping of columns.
-     * @param attributeDisplayNames Mapping of column display names.
-     * @return JSON object containing specification data.
-     * @throws SQLException If any SQL error occurs.
-     */
-    private JSONObject fetchSpecificationData(Connection conn, String tableName, String specificationid, Map<String, String> columnMappings, Map<String, String> attributeDisplayNames) throws SQLException {
-		return null;
-        // Code for fetching specification data
-    }
+        // Get query parameters
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        String partid = queryParams.getFirst("partid");
 
-    /**
-     * Fetches relationship attributes for the given part ID.
-     *
-     * @param conn Database connection.
-     * @param sql SQL query string.
-     * @param topartid Part ID.
-     * @param columnMap Mapping of relationship columns.
-     * @return JSONArray containing relationship attributes.
-     * @throws SQLException If any SQL error occurs.
-     */
-    private JSONArray fetchSpecRelationshipData(Connection conn, String sql, String topartid, Map<String, String> columnMap) throws SQLException {
-		return null;
-        // Code for fetching relationship attributes
-    }
+        // Check for null or empty partid
+        if (partid != null && partid.trim().isEmpty()) {
+            partid = null;
+        }
 
-    /**
-     * Creates a column map from a string array.
-     *
-     * @param columnNames Array of column mappings.
-     * @return Map of column mappings.
-     */
-    private Map<String, String> createColumnMap(String[] columnNames) {
-        Map<String, String> columnMap = new HashMap<>();
-        for (String mapping : columnNames) {
-            String[] parts = mapping.split("\\|");
-            if (parts.length == 2) {
-                columnMap.put(parts[1].trim(), parts[0].trim());
+        // Construct the SQL query
+        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(specRelationshipTable);
+        if (partid != null) {
+            sql.append(" WHERE relatedobjid = '").append(partid.replace("'", "''")).append("'");
+        }
+
+        // Debug log for SQL statement
+        System.out.println("Executing SQL: " + sql.toString());
+
+        ResultSet result = null;
+        JSONArray jsonArray = new JSONArray();
+        try {
+            Class.forName("org.postgresql.Driver");
+            Connection conn = DriverManager.getConnection(url, userName, password);
+            Statement stmt = conn.createStatement();
+            result = stmt.executeQuery(sql.toString());
+
+            while (result.next()) {
+                String currentPartid = result.getString("relatedobjid");
+                String specificationid = result.getString("SpecId");
+
+                JSONObject jsonObject = new JSONObject();
+
+                // Fetch the specification data and relationship data
+                JSONObject specificationData = fetchSpecificationData(conn, specificationTable, specificationid, specificationMap, attributeDisplayNames);
+                JSONArray relationshipData = fetchSpecRelationshipData(conn, specRelationshipTable, currentPartid, columnMap);
+
+                // Add BasicAttributesOfSpecification and attributesOfSpec to jsonObject
+                jsonObject.put("BasicAttributesOfSpecification", specificationData.getJSONArray("BasicAttributesOfSpecification"));
+                jsonObject.put("attributesOfSpec", specificationData.getJSONArray("attributesOfSpec"));
+
+                // Add relattributesOfSpec to jsonObject
+                jsonObject.put("relattributesOfSpec", relationshipData);
+
+                // Add the partid to jsonObject
+                jsonObject.put("partid", currentPartid);
+
+                // Create the final object structure with specificationid
+                JSONObject idObject = new JSONObject();
+                idObject.put("specificationid: " + specificationid, jsonObject);
+                jsonArray.put(idObject);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
-        return columnMap;
+
+        JSONObject finalObject = new JSONObject();
+        finalObject.put("objectdetails", jsonArray);
+        return finalObject.toString();
+    }
+	 // Fetch specification data for the given specificationid
+    private JSONObject fetchSpecificationData(Connection conn, String tableName, String specificationid, Map<String, String> columnMappings, Map<String, String> attributeDisplayNames) throws SQLException {
+        JSONObject specificationData = new JSONObject();
+        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE Id = '").append(specificationid.replace("'", "''")).append("'");
+
+        // Debug log for SQL statement
+        System.out.println("Executing Specification SQL: " + sql.toString());
+
+        Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        ResultSet resultSet = stmt.executeQuery(sql.toString());
+
+        if (resultSet.next()) {
+            JSONArray basicAttributesArray = new JSONArray();
+            JSONArray attributesArray = new JSONArray();
+
+            // Define the set of basic attributes
+            Set<String> basicAttributesSet = new HashSet<>(Arrays.asList("name", "type", "rev", "state", "title", "project", "description", "owner"));
+
+            // Set of attributes to exclude
+            Set<String> excludeAttributes = new HashSet<>(Arrays.asList("SpecId", "RelId", "RelatedObjId"));
+
+            for (String column : columnMappings.keySet()) {
+                if (excludeAttributes.contains(column.toLowerCase())) {
+                    continue; // Skip the excluded attributes
+                }
+
+                String value = resultSet.getString(column);
+                if (value != null && !value.isEmpty()) { // Ensure the value is not null or empty
+                    JSONObject attribute = new JSONObject();
+                    String displayName = attributeDisplayNames.getOrDefault(column.toLowerCase(), columnMappings.get(column));
+
+                    attribute.put("displayName", displayName);
+                    attribute.put("name", column);
+                    attribute.put("value", value);
+
+                    if (basicAttributesSet.contains(column.toLowerCase())) {
+                        basicAttributesArray.put(attribute);
+                    } else {
+                        attributesArray.put(attribute);
+                    }
+                }
+            }
+
+            // Debugging statements to ensure attributes are correctly identified
+            System.out.println("Basic Attributes: " + basicAttributesArray.toString());
+            System.out.println("Other Attributes: " + attributesArray.toString());
+
+            specificationData.put("BasicAttributesOfSpecification", basicAttributesArray);
+            specificationData.put("attributesOfSpec", attributesArray);
+        }
+
+        resultSet.close();
+        return specificationData;
+    }
+
+    // Fetch relationship attributes for the given part id
+    private JSONArray fetchSpecRelationshipData(Connection conn, String tableName, String topartid, Map<String, String> columnMap) throws SQLException {
+        JSONArray attributesArray = new JSONArray();
+        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE relatedobjid = '").append(topartid.replace("'", "''")).append("'");
+
+        // Debug log for SQL statement
+        System.out.println("Executing Relationship SQL: " + sql.toString());
+
+        Statement stmt = conn.createStatement();
+        ResultSet resultSet = stmt.executeQuery(sql.toString());
+
+        // Set of attributes to exclude
+        Set<String> excludeAttributes = new HashSet<>(Arrays.asList("relid", "SpecId", "relatedobjid"));
+
+        while (resultSet.next()) {
+            JSONObject attributeObject = new JSONObject();
+            for (String column : columnMap.keySet()) {
+                if (excludeAttributes.contains(column.toLowerCase())) {
+                    continue; // Skip the excluded attributes
+                }
+
+                String value = resultSet.getString(column);
+                if (value != null && !value.isEmpty()) { // Ensure the value is not null or empty
+                    JSONObject attribute = new JSONObject();
+                    String displayName = columnMap.get(column);
+
+                    attribute.put("displayName", displayName);
+                    attribute.put("name", column);
+                    attribute.put("value", value);
+
+                    attributesArray.put(attribute);
+                }
+            }
+        }
+
+        resultSet.close();
+        return attributesArray;
     }
 	    
-    /**
-     * Downloads the specified file from the server.
-     *
-     * @return Response containing the file to be downloaded or an error message if the file is not found.
-     */
+//FileDownload check
     @GET
     @Path("/download")
     @Produces("application/octet-stream")
-    public Response downloadFile() {
-
-        // File path declaration
-        String filePath = "C:\\Users\\DELL\\Downloads\\ABC.txt";
+    public Response downloadFile() throws Exception {
+        // Specify the path to your file
+    	//C:\Users\lenovo\Downloads\ABC.txt
+		 Properties pro = new Properties();
+        InputStream input = getClass().getClassLoader().getResourceAsStream("CAMappingNames.properties");
+        if (input == null) {
+            throw new FileNotFoundException("CAMappingNames.properties file not found.");
+        }
+        pro.load(input);
+		 String filePath = pro.getProperty("SpecFilePath");
+        /* String filePath = "C:\\Users\\lenovo\\Downloads\\ABC.txt"; */
         File file = new File(filePath);
 
-        // Check if file exists
         if (!file.exists()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("File not found at the specified path.")
+                    .entity("File not found at specified path.")
                     .build();
         }
 
-        // Returning the file as a downloadable response
         return Response.ok(file)
                 .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
                 .build();
     }
-
     /**
      * Retrieves alternate parts and their relationship details based on query parameters.
      * 
