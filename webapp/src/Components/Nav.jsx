@@ -13,6 +13,9 @@ export const Nav = ({
   selectedOption,
   handleOptionClick,
   handleSearchList,
+  partsCount,
+  caCount,
+  devCount,
 }) => {
   const { selectedTheme } = useContext(FirstContext);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -45,6 +48,9 @@ export const Nav = ({
         selectedOption={selectedOption}
         handleOptionClick={handleOptionClick}
         handleSearchList={handleSearchList}
+        partsCount={partsCount}
+        caCount={caCount}
+        devCount={devCount}
       />
       {/* <MenuSection /> */}
       <MenuSection handleCreateUserClick={handleCreateUserClick} />{" "}
@@ -75,7 +81,7 @@ export const Nav_Tabs = ({
   handleSearchList,
   partsCount,
   caCount,
-  newdeviationCount,
+  devCount,
 }) => {
   const {
     handleChangePage,
@@ -89,6 +95,14 @@ export const Nav_Tabs = ({
   const [partCount, setPartCount] = useState(null);
   // const [activeTab, setActiveTab] = useState('assignedParts');
   const [temporarySearchTerm, setTemporarySearchTerm] = useState(searchTerm); // Temporary state for the search input
+  const [defaultCounts, setDefaultCounts] = useState({
+    deviation: 0,
+    changeaction: 0,
+    ecparts: 0,
+  });
+
+  // Tracks if the search is active or not
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const username = localStorage.getItem("username");
 
   useEffect(() => {
@@ -96,9 +110,11 @@ export const Nav_Tabs = ({
       .then((response) => response.json())
       .then((data) => {
         const result = data.results[0];
-        setDevCount(result.deviation);
-        setChangeCount(result.changeaction);
-        setPartCount(result.ecparts);
+        setDefaultCounts({
+          deviation: result.deviation,
+          changeaction: result.changeaction,
+          ecparts: result.ecparts,
+        });
       })
       .catch((error) => console.error("Fetch error:", error));
   }, [username]);
@@ -115,11 +131,12 @@ export const Nav_Tabs = ({
       setTemporarySearchTerm("");
       return; // Prevent further processing
     }
-
+    setIsSearchActive(true);
     handleSearchChange(temporarySearchTerm); // Execute search logic
   };
 
   const handleClearSearch = () => {
+    setIsSearchActive(false);
     setTemporarySearchTerm(""); // Clear the temporary search term
     handleSearchChange(""); // Pass an empty string to searchTerm
   };
@@ -135,6 +152,9 @@ export const Nav_Tabs = ({
     handleOptionClick(option);
     handleSearchList(false); // Close the dropdown after option selection
   };
+  const currentCounts = isSearchActive
+    ? { deviation: devCount, changeaction: caCount, ecparts: partsCount }
+    : defaultCounts;
 
   return (
     <div className="nav_tab_container">
@@ -196,21 +216,21 @@ export const Nav_Tabs = ({
           className={activeTab === "assignedParts" ? "active_link" : ""}
           onClick={() => handleTabClick("assignedParts", handleAssignPart)}
         >
-          Assigned Parts({partCount})
+          Assigned Parts({currentCounts.ecparts})
         </a>
         <a
           href="#"
           className={activeTab === "changes" ? "active_link" : ""}
           onClick={() => handleTabClick("changes", handleChangePage)}
         >
-          Changes({changeActionCount})
+          Changes({currentCounts.changeaction})
         </a>
         <a
           href="#"
           className={activeTab === "deviation" ? "active_link" : ""}
           onClick={() => handleTabClick("deviation", handleDeviationPage)}
         >
-          Deviation({deviationCount})
+          Deviation({currentCounts.deviation})
         </a>
       </div>
     </div>
