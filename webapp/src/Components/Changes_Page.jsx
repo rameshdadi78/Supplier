@@ -304,7 +304,6 @@ export const Changes_Page = ({
       }
 
       const data = await response.json();
-      setSelectedRow(data);
       const objectData = data.results || [];
       const combinedAttribute = {};
 
