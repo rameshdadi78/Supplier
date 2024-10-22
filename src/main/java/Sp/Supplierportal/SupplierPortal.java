@@ -1578,7 +1578,7 @@ public class SupplierPortal {
 		@Path("getcaaffectedItems")
 		@Produces(MediaType.APPLICATION_JSON)
 		public String getCaAffectedItems(@Context UriInfo uriInfo) throws Exception {
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 
@@ -1636,7 +1636,7 @@ public class SupplierPortal {
 		    String caDetailsQuery =  "SELECT epd.*, csd.supplier_visibility, csd.supplier_item_visibility, csd.supplier_spec_visibility " +
                     "FROM " + tablename + " epd " +
                     "JOIN " + supplierTable + " csd " +
-                    "ON (epd.changenumber = csd.name OR " +
+                    "ON (epd.changenumber = csd.changenumber OR " +
                     "     epd.changenumber LIKE CONCAT('%|', csd.changenumber, '|%') OR " + // in the middle
                     "     epd.changenumber LIKE CONCAT(csd.changenumber, '|%') OR " +      // at the beginning
                     "     epd.changenumber LIKE CONCAT('%|', csd.changenumber)) " +        // at the end
