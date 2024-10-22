@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import API_BASE_URL from "../config";
 import DataTable from "react-data-table-component";
 import icon from "../Icons/list.png";
 import { Tabs_Sec_Popup } from "./Tabs_Sec_Popup";
@@ -69,7 +70,7 @@ export default function CA_AffectedItems({
     const fetchAffectedItems = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8081/Supplierportal/webapi/SupplierPortal/getcaaffectedItems?caid=${caId}`
+          `${API_BASE_URL}/SupplierPortal/getcaaffectedItems?caid=${caId}`
         );
         const data = await response.json();
         const objectArray = data.results || [];
@@ -166,7 +167,7 @@ export default function CA_AffectedItems({
     };
     const fetchSupplierData = async (collectedIds, caId) => {
       const url =
-        "http://localhost:8081/Supplierportal/webapi/SupplierPortal/getSupplierData";
+        `${API_BASE_URL}/SupplierPortal/getSupplierData`;
       const payload = {
         objectIds: collectedIds,
         caid: caId,
@@ -206,7 +207,7 @@ export default function CA_AffectedItems({
     setIsPopupOpen(true);
     try {
       const response = await fetch(
-        `http://localhost:8081/Supplierportal/webapi/SupplierPortal/parts?partid=${row.partId}`
+        `${API_BASE_URL}/SupplierPortal/parts?partid=${row.partId}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
