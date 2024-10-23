@@ -116,8 +116,12 @@ const MainSection = ({
               acc[attr.name] = attr.value;
               return acc;
             }, {});
-            const isvisiabledata = data[key].visibilityValue;
-            setVisibility({ [objId]: isvisiabledata });
+           const isvisiabledata = data[key].visibilityValue;
+            setVisibility(prevState => ({
+                ...prevState,
+                [objId]: isvisiabledata
+            }));
+
           
 
             // Assuming visibility is now handled differently and is always true
