@@ -1,4 +1,4 @@
-import "../Styles/Tabs_Sec.css";
+import "../Styles/Tabs_Section_Popup.css";
 import { Tabs, Tab, TabList, TabPanel } from 'react-tabs';
 import { useState, useContext,useRef,useEffect } from 'react';
 import API_BASE_URL from '../config';
