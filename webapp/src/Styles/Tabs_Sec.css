@@ -204,11 +204,10 @@
 
 .header_right_export {
   position: relative;
-  top: 24px;
+  top: 7px;
 }
 .header_right_settings {
-  position: relative;
-  top: 24px;
+  top: 7px;
 }
 
 /* ----------------------------------------------------------------------------------------- */
@@ -252,18 +251,16 @@
   position: relative;
 }
 #columnDropdown.dropdown-content {
-  position: absolute;
   background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  /* top: 780px; */
-  right: 0px;
-  z-index: 1;
-  max-height: 150px; /* Adjust the height as needed */
-  overflow-y: auto; /* Adds a scrollbar if content exceeds the height */
   border: 1px solid #ccc;
+  box-shadow: 0 8px 16px 0 #0003;
+  max-height: 150px;
+  min-width: 160px;
   overflow-x: hidden;
-  /* background-color: red; */
+  overflow-y: auto;
+  position: absolute;
+  right: 30px;
+  z-index: 1;
 }
 
 /* Style the dropdown menu */
@@ -556,21 +553,21 @@
 }
 
 .popup-close-button {
-  position: absolute;
-  top: 15px;
-  right: 15px;
+  align-items: center;
   background: red;
-  color: white;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  color: #fff;
   cursor: pointer;
   display: flex;
-  justify-content: center;
-  align-items: center;
   font-size: 16px;
+  height: 30px;
+  justify-content: center;
   line-height: 16px;
+  position: absolute;
+  right: 20px;
+  top: 31px;
+  width: 30px;
 }
 
 .data-table-container {
@@ -611,9 +608,10 @@
 
 /* Image styling inside buttons */
 .popup-command-button img {
-  width: 35px;
-  height: 35px;
   cursor: pointer;
+  height: 35px;
+  width: 35px;
+  margin-right: 35px;
 }
 
 .listicon {
@@ -750,24 +748,11 @@
   background: none;
   border: none;
   cursor: pointer;
-  left: 95%;
+  right: 20%;
   position: relative;
 }
 
-/* Dropdown Styles */
-.dropdown-content {
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  min-width: 200px;
-  height: 200px; /* Set a max height */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1001; /* Ensure dropdown is above other elements */
-  padding: 10px;
-  border-radius: 5px;
-  overflow-y: auto; /* Enable scrolling */
-  left: 85%;
-}
+
 
 /* Dropdown Checkbox Styles */
 .dropdown-content label {
@@ -830,4 +815,23 @@
 .selected-column {
   background-color: #77c1e6; /* Light blue background for selected items */
   font-weight: bold; /* You can change the font styling to highlight */
+}
+
+#customforCa{
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    left: 95%;
+}
+.dropdown-content_for_ca {
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+    box-shadow: 0 8px 16px #0003;
+    max-height: 200px;
+    min-width: 200px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: 1;
+	right: 5px;
 }
