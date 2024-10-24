@@ -15,7 +15,7 @@ export const Nav = ({
   handleSearchList,
   partsCount,
   caCount,
-  devCount,
+  newDevCount,
 }) => {
   const { selectedTheme } = useContext(FirstContext);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -50,7 +50,7 @@ export const Nav = ({
         handleSearchList={handleSearchList}
         partsCount={partsCount}
         caCount={caCount}
-        devCount={devCount}
+        devCount={newDevCount}
       />
       {/* <MenuSection /> */}
       <MenuSection handleCreateUserClick={handleCreateUserClick} />{" "}
