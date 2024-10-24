@@ -9,18 +9,18 @@ import { Tab_EBOM } from "./Tab_EBOM";
 import { Tab_Changes } from "./Tab_Changes";
 import { Tab_Deviation } from "./Tab_Deviation";
 
-export const Tabs_Sec = ({ selectedRow }) => {
+export const Tabs_Sec = ({ selectedRow,visibility,specVisibility,itemVisibility }) => {
   // const selectedRow = useContext(MainContext);
   // console.log(selectedRow);
   const [selectedTab, setSelectedTab] = useState(0); // Add useState to manage selected tab
 
   const [isSlideInOpen, setIsSlideInOpen] = useState(false);
   const [columnsData, setColumnsData] = useState([]);
-
+  const [visibleTabs, setVisibleTabs] = useState([]);
   const [selectedRowData, setSelectedRowData] = useState(null);
 
   const tabs = [
-    { name: "Part Detail(s)", icon: "/assets/part.png" },
+    { name: "Part Detail(s)", icon: "/assets/Part.png" },
     { name: "Specification(s)", icon: "/assets/specification.png" },
     { name: "EBOM", icon: "./assets/ebom.png" },
     { name: "Changes", icon: "/assets/ChangeAction.png" },
@@ -245,28 +245,80 @@ export const Tabs_Sec = ({ selectedRow }) => {
 
   const csvLinkKey = `${currentExportType}-${exportOption}-${dataToExport.data.length}`;
 
+  useEffect(() => {
+  
+    let objId;
+    if (selectedRow) {
+      objId = Object.keys(selectedRow.results[0])[0].split(':')[1].trim();
+    }
+  
+    let specVisibilityValue = false;
+    let itemVisibilityValue = false;
+    let visibilityValue = false; // Initialize visibilityValue
+  
+    // Check if object ID matches with the provided visibility arrays
+    if (objId && specVisibility.length > 0 && itemVisibility.length > 0) {
+      for (let i = 0; i < specVisibility.length; i++) {
+        if (specVisibility[i].partId === objId) {
+          specVisibilityValue = specVisibility[i].specVisible;
+        }
+      }
+      for (let i = 0; i < itemVisibility.length; i++) {
+        if (itemVisibility[i].partId === objId) {
+          itemVisibilityValue = itemVisibility[i].itemVisible;
+        }
+      }
+    }
+  
+    // Get visibility value based on objId
+    if (objId && visibility) {
+      Object.keys(visibility).forEach((key) => {
+        if (key.includes(objId)) {
+          visibilityValue = visibility[key];
+        }
+      });
+    }
+  
+
+  
+    // Determine which tabs should be visible
+    const getVisibleTabs = () => {
+      if (visibilityValue) {
+        // If visibilityValue is true, show all tabs
+        return tabs;
+      } else if (specVisibilityValue) {
+        // If specVisibilityValue is true, show both Part Details and Specification
+        return [tabs[0], tabs[1]];
+      } else if (itemVisibilityValue) {
+        // If itemVisibilityValue is true, show only Part Details
+        return [tabs[0]];
+      }
+      // By default, show all tabs
+      return tabs;
+    };
+  
+    setVisibleTabs(getVisibleTabs());
+  }, [selectedRow, specVisibility, itemVisibility, visibility]);
+
+
+
   // --------------------------------------------
 
   return (
-    <Tabs
-      selectedIndex={selectedTab}
-      onSelect={(index) => setSelectedTab(index)}
-    >
-      <TabList className="tab-list">
-        {tabs.map((tab, index) => (
-          <Tab
-            key={index}
-            className={`tab-item ${
-              selectedTab === index ? "selectedTab" : "unselectedTab"
-            }`}
-          >
-            <div className="tab-content">
-              <img src={tab.icon} className="tab-icon" alt={tab.name} />
-              <div className="tab-name">{tab.name}</div>
-            </div>
-          </Tab>
-        ))}
-      </TabList>
+<Tabs selectedIndex={selectedTab} onSelect={index => setSelectedTab(index)}>
+    <TabList className="tab-list">
+      {visibleTabs.map((tab, index) => (
+        <Tab
+          key={index}
+          className={`tab-item ${selectedTab === index ? 'selectedTab' : 'unselectedTab'}`}
+        >
+          <div className="tab-content">
+            <img src={tab.icon} className="tab-icon" alt={tab.name} />
+            <div className="tab-name">{tab.name}</div>
+          </div>
+        </Tab>
+      ))}
+    </TabList>
       {/* ------------------------------------------------------------------------------------------------------------ */}
 
       <TabPanel>
