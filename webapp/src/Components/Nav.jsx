@@ -93,7 +93,7 @@ export const Nav_Tabs = ({
   const [changeActionCount, setChangeCount] = useState(null);
   const [deviationCount, setDevCount] = useState(null);
   const [partCount, setPartCount] = useState(null);
-  // const [activeTab, setActiveTab] = useState('assignedParts');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [temporarySearchTerm, setTemporarySearchTerm] = useState(searchTerm); // Temporary state for the search input
   const dropdownRef = useRef(null);
   const [defaultCounts, setDefaultCounts] = useState({
@@ -149,53 +149,50 @@ export const Nav_Tabs = ({
     }
   };
 
-  const handleOptionClickWithClose = (option) => {
-    handleOptionClick(option);
-    handleSearchList(false); // Close the dropdown after option selection
-  };
-   const handleClickOutside = (event) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-          handleSearchList(false); // Close the dropdown on outside click
-        }
-      };
-    
-      useEffect(() => {
-        document.addEventListener("mousedown", handleClickOutside); // Add listener
-    
-        return () => {
-          document.removeEventListener("mousedown", handleClickOutside); // Cleanup
+    const handleOptionClickWithClose = (option) => {
+        handleOptionClick(option);
+        setIsDropdownOpen(true); 
+        setTimeout(() => setIsDropdownOpen(false), 0);
+    };
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false); // Close dropdown
+            }
         };
-      }, []);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
   const currentCounts = isSearchActive
     ? { deviation: devCount, changeaction: caCount, ecparts: partsCount }
     : defaultCounts;
 
   return (
     <div className="nav_tab_container">
-      <div className="search_section" ref={dropdownRef}>
-        <div className="search_dropdown">
-          <div className="search_dropdown_text" onClick={handleSearchList}>
+      <div className="search_section" >
+        <div className="search_dropdown" ref={dropdownRef}>
+          <div className="search_dropdown_text" onClick={() => setIsDropdownOpen((prev) => !prev)}>
             <span>{selectedOption}</span>
             <ion-icon
               name="chevron-down-outline"
-              id={`${searchList ? "rotate_icon" : ""}`}
+              id={isDropdownOpen ? "rotate_icon" : ""}
             ></ion-icon>
           </div>
-          <ul
-            className={`search_dropdown_list ${
-              searchList ? "search_list_show" : ""
-            }`}
-          >
-            {["Everything", "Name", "IDs"].map((option) => (
-              <li
-                key={option}
-                className="search_dropdown_item"
-                onClick={() => handleOptionClickWithClose(option)}
-              >
-                {option}
-              </li>
-            ))}
-          </ul>
+                    {isDropdownOpen && (
+                        <ul className="search_dropdown_list search_list_show">
+                            {['Everything', 'Name', 'IDs'].map((option) => (
+                                <li
+                                    key={option}
+                                    className="search_dropdown_item"
+                                    onClick={() => handleOptionClickWithClose(option)}
+                                >
+                                    {option}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
         </div>
 
         <div className="search_box">
