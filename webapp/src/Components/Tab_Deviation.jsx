@@ -221,7 +221,7 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
 {isSlideInOpen && (
             <SlideInPage data={selectedRowData}  
             currentTab={"Deviation"}  
-            fileName= "Deviation_Properties.pdf" 
+            fileName= {`Deviation_Properties_${selectedRowData?.Name}.pdf`}
             selectedSections = {columnOrderConfig.Deviationsections}
             onClose={() => setIsSlideInOpen(false)} 
             isSlideInOpen={isSlideInOpen}
