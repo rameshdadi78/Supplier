@@ -518,7 +518,7 @@ const fetchDirectChildren = async (parentObjectId) => {
               <SlideInPage
                 data={selectedRowData}
                 currentTab={"EBOM"}
-                fileName= "EBOM_Properties.pdf"
+                fileName= {`EBOM_Properties_${selectedRowData?.Name}.pdf`}
                 selectedSections = {columnOrderConfig.EBOMSlidein}
                 onClose={() => setIsSlideInOpen(false)}
                 isSlideInOpen={isSlideInOpen}
