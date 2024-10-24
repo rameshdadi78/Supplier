@@ -26,7 +26,7 @@ import { Tab_Deviation } from "./Tab_Deviation";
 
 if (supplierVisibilityValue === true) {
   tabs = [
-    { name: "Part Detail(s)", icon: "/assets/part.png" },
+    { name: "Part Detail(s)", icon: "/assets/part_popup.png" },
     { name: "Specification(s)", icon: "/assets/specification.png" },
     { name: "EBOM", icon: "/assets/ebom.png" },
     { name: "Changes", icon: "/assets/ChangeAction.png" },
