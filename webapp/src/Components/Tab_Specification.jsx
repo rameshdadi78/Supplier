@@ -246,7 +246,7 @@ const handleColumnSelection = (attr) => {
                       <SlideInPage
                       data={selectedRowData}
                       currentTab={"Spec"} // Pass currentTab to SlideInPage
-                      fileName= "Specification_Properties.pdf"
+                      fileName= {`Specification_Properties_${selectedRowData?.Name}.pdf`}
                       selectedSections = {columnOrderConfig.SpecificationSlidein}
                       onClose={() => setIsSlideInOpen(false)} 
                       isSlideInOpen={isSlideInOpen}/>
