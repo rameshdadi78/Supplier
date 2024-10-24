@@ -48,3 +48,9 @@
   align-items: center;
   z-index: 1000; /* Ensure it’s on top */
 }
+ .no-results {
+    text-align: center;
+    margin-top: 320px;
+    font-size: 25px;
+    color: #ce0404;
+  }
