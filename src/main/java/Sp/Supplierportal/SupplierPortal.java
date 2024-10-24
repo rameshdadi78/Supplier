@@ -1650,6 +1650,7 @@ public class SupplierPortal {
 		    JSONArray jsonArray = new JSONArray();
 		    Class.forName("org.postgresql.Driver");
 
+		        Map<String, JSONObject> uniquePartMap = new HashMap<>();
 		    try (Connection conn = DriverManager.getConnection(url, userName, password);
 		         PreparedStatement Stmt = conn.prepareStatement(caDetailsQuery)) {
 
@@ -1664,7 +1665,12 @@ public class SupplierPortal {
 
 		        while (Result.next()) {
 		            String id = Result.getString("id"); // Extract the Id value
-		            
+
+		            // Check if the ID and its corresponding data are already processed
+		            if (uniquePartMap.containsKey(id)) {
+		                continue; // Skip if already exists
+		            }
+
 		            JSONObject jsonObject = new JSONObject();
 		            JSONArray basicAttributesArray = new JSONArray();
 		            JSONArray attributesArray = new JSONArray();
@@ -1682,11 +1688,6 @@ public class SupplierPortal {
 
 		            // Add other attributes
 		            for (String column : columnMap.keySet()) {
-//		                if (column.equalsIgnoreCase("partid")) {
-//		                    // Skip processing the 'Id' column
-//		                    continue;
-//		                }
-
 		                JSONObject attribute = new JSONObject();
 		                String columnValue = Result.getString(column);
 		                Map<String, String> details = columnMap.get(column);
@@ -1696,22 +1697,28 @@ public class SupplierPortal {
 		                attributesArray.put(attribute);
 		            }
 
-
 		            jsonObject.put("basicAttributes", basicAttributesArray);
 		            jsonObject.put("attributes", attributesArray);
 		            
-		            JSONObject idObject = new JSONObject();
-		            idObject.put("objectId: " + id, jsonObject); // Use Id as the key
-		            jsonArray.put(idObject);
+		            uniquePartMap.put(id, jsonObject); // Add unique part ID and its JSON object to the map
 		        }
 		    } catch (Exception e) {
 		        e.printStackTrace();
 		    } 
+
+		    // Convert the uniquePartMap values to JSON array
+		    for (Map.Entry<String, JSONObject> entry : uniquePartMap.entrySet()) {
+		        JSONObject idObject = new JSONObject();
+		        idObject.put("objectId", entry.getKey()); // Use Id as the key
+		        idObject.put("data", entry.getValue()); // Store the JSON object as data
+		        jsonArray.put(idObject);
+		    }
+
 		    JSONObject finalObject = new JSONObject();
 		    finalObject.put("results", jsonArray);
-		    return finalObject.toString();
-	 }
-
+		    return finalObject.toString();	 
+		}
+	 	
 	    /**
      * Fetches supplier data for given object IDs and change action ID (caid).
      *
