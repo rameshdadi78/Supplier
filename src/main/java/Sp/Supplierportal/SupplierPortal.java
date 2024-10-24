@@ -338,7 +338,7 @@ public class SupplierPortal {
 	        @QueryParam("fromid") String fromId,
 	        @QueryParam("connattributes") boolean connAttributes
 	) throws Exception {
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 
@@ -541,7 +541,7 @@ public class SupplierPortal {
 	        @QueryParam("connattributes") boolean connAttributes,
 	        @QueryParam("objectattributes") String objectAttributes
 	) throws Exception {
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 	    
@@ -783,7 +783,7 @@ public class SupplierPortal {
 	@Path("getpersonmembercompanydetails")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getPersonMemberCompanyDetails(@Context UriInfo uriInfo) throws Exception {
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 
@@ -983,7 +983,7 @@ public class SupplierPortal {
 	@Path("getsupplierpersondetails")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getAllSupplierPersonDetails(@Context UriInfo uriInfo) throws Exception {
-		String url=System.getenv("SupplierPortalSPDBURL");
+		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 
