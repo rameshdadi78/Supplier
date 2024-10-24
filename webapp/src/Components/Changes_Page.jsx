@@ -12,7 +12,7 @@ import jsonStructure from "./columnOrderConfig.json";
 import CA_AffectedItems from "./CA_AffectedItems";
 import { Tabs_Sec } from "./Tabs_Sec";
 import loadingIcon from "../Icons/loading.png"; // Import the loading icon
-
+import affectedItemsImage from '../Icons/supplies.png'
 const MainContext = createContext();
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -465,7 +465,7 @@ export const Changes_Page = ({
                 >
                   <div className="ca-tab-content">
                     <img
-                      src={changeActionImage}
+                      src={affectedItemsImage}
                       className="tab-icon"
                       alt="Affected Items"
                     />
