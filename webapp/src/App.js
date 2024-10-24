@@ -206,26 +206,34 @@ export const HomePage = () => {
         />
 
         {/* Conditionally render sections based on available data */}
-        {hasPartsData && assignedParts && (
-          <MainSection
-            selectedRow={selectedRow}
-            setSelectedRow={setSelectedRow}
-            setSupplierName={setSupplierName}
-            visiblePartIds={visiblePartIds}
-            visibleSpec={visibleSpec}
+        {hasPartsData && assignedParts ? (
+          <MainSection 
+            selectedRow={selectedRow} 
+            setSelectedRow={setSelectedRow} 
+            setSupplierName={setSupplierName} 
+            visiblePartIds={visiblePartIds} 
+            visibleSpec={visibleSpec} 
             isVisible={isVisible}
             visibleItem={visibleItem}
           />
+        ) : assignedParts && (
+          <p className="no-results">No Results Found for Parts</p>
         )}
-        {hasChangesData && changesOpen && (
-          <Changes_Page
-            selectedRData={selectedRow}
-            setSelectedRData={setSelectedRow}
+
+        {hasChangesData && changesOpen ? (
+          <Changes_Page 
+            selectedRData={selectedRow} 
+            setSelectedRData={setSelectedRow} 
             caObjectIds={caObjectIds}
           />
+        ) : changesOpen && (
+          <p className="no-results">No Results Found for Changes</p>
         )}
-        {hasDeviationData && deviationOpen && (
+
+        {hasDeviationData && deviationOpen ? (
           <Devaition_Page devObjectIds={devObjectIds} />
+        ) : deviationOpen && (
+          <p className="no-results">No Results Found for Deviations</p>
         )}
 
         <SessionTimeoutDialog />
