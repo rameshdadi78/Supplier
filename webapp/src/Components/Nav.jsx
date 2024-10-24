@@ -95,6 +95,7 @@ export const Nav_Tabs = ({
   const [partCount, setPartCount] = useState(null);
   // const [activeTab, setActiveTab] = useState('assignedParts');
   const [temporarySearchTerm, setTemporarySearchTerm] = useState(searchTerm); // Temporary state for the search input
+  const dropdownRef = useRef(null);
   const [defaultCounts, setDefaultCounts] = useState({
     deviation: 0,
     changeaction: 0,
@@ -152,13 +153,26 @@ export const Nav_Tabs = ({
     handleOptionClick(option);
     handleSearchList(false); // Close the dropdown after option selection
   };
+   const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          handleSearchList(false); // Close the dropdown on outside click
+        }
+      };
+    
+      useEffect(() => {
+        document.addEventListener("mousedown", handleClickOutside); // Add listener
+    
+        return () => {
+          document.removeEventListener("mousedown", handleClickOutside); // Cleanup
+        };
+      }, []);
   const currentCounts = isSearchActive
     ? { deviation: devCount, changeaction: caCount, ecparts: partsCount }
     : defaultCounts;
 
   return (
     <div className="nav_tab_container">
-      <div className="search_section">
+      <div className="search_section" ref={dropdownRef}>
         <div className="search_dropdown">
           <div className="search_dropdown_text" onClick={handleSearchList}>
             <span>{selectedOption}</span>
