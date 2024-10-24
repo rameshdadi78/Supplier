@@ -358,11 +358,11 @@ export default function CA_AffectedItems({
   return (
     <div className="affecteditemsTable">
       <div className="header_right_settings">
-        <button id="custom" onClick={handleSettingsClick}>
+        <button id="customforCa" onClick={handleSettingsClick}>
           <img src={column} alt="Customize Columns" />
         </button>
         {dropdownOpen && (
-          <div className="dropdown-content" ref={dropdownRef}>
+          <div className="dropdown-content_for_ca" ref={dropdownRef}>
             <div className="scrollable-dropdown">
               {dynamicColumns.map((attr) => (
                 <span
