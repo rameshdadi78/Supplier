@@ -264,7 +264,7 @@ const fetchChangeActions = (objectId) => {
               <SlideInPage
               data={selectedRowData}
               currentTab={"Changes"} // Pass currentTab to SlideInPage
-              fileName= "ChangeAction_Properties.pdf"
+              fileName= {`ChangeAction_Properties_${selectedRowData?.Name}.pdf`}
               selectedSections = {columnOrderConfig.ChangeActionSlidein}
               onClose={() => setIsSlideInOpen(false)} 
               isSlideInOpen={isSlideInOpen}
