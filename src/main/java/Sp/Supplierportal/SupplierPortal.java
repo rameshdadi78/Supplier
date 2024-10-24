@@ -1161,11 +1161,11 @@ public class SupplierPortal {
 	        if (field.equalsIgnoreCase("Everything")) {
 	            StringBuilder sqlBuilder = new StringBuilder("SELECT id, name, type FROM " + ecPartTable + " WHERE ");
 	            List<String> conditions = new ArrayList<>();
-
+	            String sqlquery = "SELECT column_name FROM information_schema.columns WHERE table_name = 'ec_parts_details' AND table_schema = 'supplierportal_schema1'";
 	            // Generate LIKE condition for all columns
-	            try (PreparedStatement columnPs = con.prepareStatement(
-	                    "SELECT column_name FROM information_schema.columns WHERE table_name = '" + ecPartTable + "'")) {
-	                ResultSet rs = columnPs.executeQuery();
+	            try (PreparedStatement columnPs = con.prepareStatement(sqlquery);
+	            		ResultSet rs = columnPs.executeQuery();) {
+	               
 	                while (rs.next()) {
 	                    String columnName = rs.getString("column_name");
 	                    conditions.add(columnName + " ILIKE ?");
@@ -2509,6 +2509,7 @@ public class SupplierPortal {
 		    JSONObject json = new JSONObject(jsonInput);
 		    String text = json.optString("text", "%");
 		    String field = json.optString("field");
+		    String supplierName = json.optString("suppliername");
 
 		    // Validate 'Name' field input
 		    if (field.equalsIgnoreCase("Name")) {
@@ -2555,7 +2556,7 @@ public class SupplierPortal {
 		        } else if (field.equalsIgnoreCase("name")) {
 		            sql = "SELECT ChangeNumber, name, type FROM " + changeActionTable + " WHERE name ILIKE ? AND name ILIKE 'CA-%'";
 		        } else if (field.equalsIgnoreCase("Everything")) {
-		            sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + changeActionTable + "'";
+		            sql = "SELECT column_name FROM information_schema.columns WHERE table_name = 'change_action_details' AND table_schema = 'supplierportal_schema1'";
 		        }
 
 		        try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -2568,7 +2569,7 @@ public class SupplierPortal {
 		            if (field.equalsIgnoreCase("Everything")) {
 		                while (rs.next()) {
 		                    String columnName = rs.getString("column_name");
-		                    String query = "SELECT caid, type FROM changeaction WHERE " + columnName + " ILIKE ?";
+		                    String query = "SELECT changenumber, type FROM supplierportal_schema1.change_action_details WHERE " + columnName + " ILIKE ?";
 
 		                    try (PreparedStatement ps2 = con.prepareStatement(query)) {
 		                        ps2.setString(1, text);
@@ -2579,9 +2580,10 @@ public class SupplierPortal {
 		                            String type = innerRs.getString("type");
 
 		                            // Check if the caid exists in ca_suppliers_details
-		                            String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Details  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+		                            String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Details  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No') AND company_name = ?";
 		                            try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
 		                                checkPs.setString(1, caid);
+		                                checkPs.setString(2, supplierName);
 		                                ResultSet checkSet = checkPs.executeQuery();
 		                                if (checkSet.next() && checkSet.getInt(1) > 0) {
 		                                    caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
@@ -2596,9 +2598,10 @@ public class SupplierPortal {
 		                    String type = rs.getString("type");
 
 		                    // Check if the caid exists in ca_suppliers_details
-		                    String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Detail  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+		                    String checkSql = "SELECT COUNT(*) FROM supplierportal_schema1.CA_Deviation_Suppliers_Details  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No' ) AND company_name = ?";
 		                    try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
 		                        checkPs.setString(1, caid);
+		                        checkPs.setString(2, supplierName);
 		                        ResultSet checkSet = checkPs.executeQuery();
 		                        if (checkSet.next() && checkSet.getInt(1) > 0) {
 		                            caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
@@ -2670,7 +2673,7 @@ public class SupplierPortal {
 			        JSONObject json = new JSONObject(s);
 			        String text = json.optString("text", "%");
 			        String field = json.optString("field");
-
+			        String supplierName = json.optString("suppliername");
 			        // Validate 'Name' field input
 			        if (field.equalsIgnoreCase("Name")) {
 			            if (!text.startsWith("DEV-") || text.contains("*00*")) {
@@ -2702,11 +2705,11 @@ public class SupplierPortal {
 
 			                    // SQL query based on the input field
 			                    if (field.equalsIgnoreCase("ids")) {
-			                        sql = "SELECT deviationid, type FROM " + devtablename + " WHERE caid ILIKE ?";
+			                        sql = "SELECT deviationid, type FROM " + devtablename + " WHERE deviationid ILIKE ?";
 			                    } else if (field.equalsIgnoreCase("name")) {
 			                        sql = "SELECT deviationid, name, type FROM " + devtablename + " WHERE name ILIKE ? AND name ILIKE 'DEV-%'";
 			                    } else if (field.equalsIgnoreCase("Everything")) {
-			                        sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ' " + devtablename + "'";
+			                        sql = "SELECT column_name FROM information_schema.columns WHERE table_name = 'deviation_details' AND table_schema = 'supplierportal_schema1'";
 			                    }
 
 			                    try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -2728,17 +2731,18 @@ public class SupplierPortal {
 			                                    ResultSet innerRs = ps2.executeQuery();
 
 			                                    while (innerRs.next()) {
-			                                        String caid = innerRs.getString("deviationid");
+			                                        String devid = innerRs.getString("deviationid");
 			                                        String type = innerRs.getString("type");
 
 			                                        // Check for acknowledgment in 'ca_suppliers_details'
-			                                        String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                        String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No' ) AND company_name = ? ";
 			                                        try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
-			                                            checkPs.setString(1, caid);
+			                                            checkPs.setString(1, devid);
+			                                            checkPs.setString(2, supplierName);
 			                                            ResultSet checkSet = checkPs.executeQuery();
 
 			                                            if (checkSet.next() && checkSet.getInt(1) > 0) {
-			                                                caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                                caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(devid);
 			                                            }
 			                                        }
 			                                    }
@@ -2747,16 +2751,17 @@ public class SupplierPortal {
 			                        } else {
 			                            // Handle 'ids' and 'name' field queries
 			                            while (rs.next()) {
-			                                String caid = rs.getString("deviationid");
+			                                String devid = rs.getString("deviationid");
 			                                String type = rs.getString("type");
 
-			                                String checkSql = "SELECT COUNT(*) FROM " + suppliersDetailsTable + " WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')";
+			                                String checkSql =  "SELECT COUNT(*) FROM " + suppliersDetailsTable + "  WHERE changenumber = ? AND (acknowledge = 'Yes' OR acknowledge = 'No')  AND company_name = ? ";
 			                                try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
-			                                    checkPs.setString(1, caid);
+			                                    checkPs.setString(1, devid);
+			                                    checkPs.setString(2, supplierName);
 			                                    ResultSet checkSet = checkPs.executeQuery();
 
 			                                    if (checkSet.next() && checkSet.getInt(1) > 0) {
-			                                        caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(caid);
+			                                        caidsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(devid);
 			                                    }
 			                                }
 			                            }
@@ -2893,5 +2898,111 @@ public class SupplierPortal {
 
 		    return jsonResponse.toString();
 		}
-			
+
+		@POST
+		@Path("searchAll")
+		@Consumes(MediaType.APPLICATION_JSON)
+		@Produces(MediaType.APPLICATION_JSON)
+		public Response searchAll(String s) {
+		    JSONObject finalResponse = new JSONObject();
+		    JSONArray jsonArray = new JSONArray();
+		    
+		    List<String> parts = new ArrayList<>();
+		    List<String> ca = new ArrayList<>();
+		    List<String> deviation = new ArrayList<>();
+		    
+		    // Calling getDataPart
+		    try {
+		        Response partResponse = getData(s);
+		        JSONObject partJson = new JSONObject(partResponse.getEntity().toString());
+		        
+		        if (partJson.has("results")) {
+		            JSONArray partResults = partJson.getJSONArray("results");
+		            for (int i = 0; i < partResults.length(); i++) {
+		                JSONObject partObject = partResults.getJSONObject(i);
+		                JSONObject partDetails = partObject.getJSONObject("type: Part");
+		                String partId = partDetails.getString("partid");
+		                boolean itemVisible = partDetails.optBoolean("itemVisible", false); // Default to false if not present
+		                boolean specVisible = partDetails.optBoolean("specVisible", false); // Default to false if not present
+		                boolean isVisible = partDetails.optBoolean("isVisible", false); 
+		                if (!parts.contains(partId)) {
+						parts.add(partId+"|"+itemVisible+"|"+specVisible+"|"+isVisible); // Collect unique partids
+		                }
+		            }
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        finalResponse.put("status", "fail");
+		        finalResponse.put("message", "Error occurred while fetching parts.");
+		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
+		    }
+
+		    // Calling getDataCA
+		    try {
+		        Response caResponse = getDataCA(s);
+		        JSONObject caJson = new JSONObject(caResponse.getEntity().toString());
+		        
+		        if (caJson.has("results")) {
+		            JSONArray caResults = caJson.getJSONArray("results");
+		            for (int i = 0; i < caResults.length(); i++) {
+		                JSONObject caObject = caResults.getJSONObject(i);
+		                JSONObject caDetails = caObject.getJSONObject("type: Change Action");
+		                String caIdString = caDetails.getString("caid");
+		                String[] caIds = caIdString.split("\\|"); // Split by "|" separator
+		                for (String caId : caIds) {
+		                    caId = caId.trim(); // Optional: trim whitespace
+		                    if (!ca.contains(caId) && !caId.isEmpty()) {
+		                        ca.add(caId); // Collect unique caids
+		                    }
+		                }
+		            }
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        finalResponse.put("status", "fail");
+		        finalResponse.put("message", "Error occurred while fetching CA.");
+		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
+		    }
+
+		    // Calling getDataDev
+		    try {
+		        Response devResponse = getDataDev(s);
+		        JSONObject devJson = new JSONObject(devResponse.getEntity().toString());
+		        
+		        if (devJson.has("results")) {
+		            JSONArray devResults = devJson.getJSONArray("results");
+		            for (int i = 0; i < devResults.length(); i++) {
+		                JSONObject devObject = devResults.getJSONObject(i);
+		                JSONObject devDetails = devObject.getJSONObject("type: Deviation");
+		                System.out.println("devDetails----------------,"+devDetails);
+		                String deviationIdString = devDetails.getString("deviationid");
+		                String[] deviationIds = deviationIdString.split("\\|"); // Split by "|" separator
+		                for (String deviationId : deviationIds) {
+		                    deviationId = deviationId.trim(); // Optional: trim whitespace
+		                    if (!deviation.contains(deviationId) && !deviationId.isEmpty()) {
+		                    	System.out.println("deviationId-----------------,"+deviationId);
+		                        deviation.add(deviationId); // Collect unique deviationids
+		                    }
+		                }
+		            }
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        finalResponse.put("status", "fail");
+		        finalResponse.put("message", "Error occurred while fetching deviations.");
+		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(finalResponse.toString()).build();
+		    }
+
+		    // Construct final JSON output
+		    JSONObject combinedObject = new JSONObject();
+		    combinedObject.put("parts", parts);
+		    combinedObject.put("ca", ca);
+		    combinedObject.put("deviation", deviation);
+
+		    jsonArray.put(combinedObject);
+		    finalResponse.put("results", jsonArray);
+
+		    return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
 		}
+
+}
