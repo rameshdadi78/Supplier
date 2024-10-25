@@ -7,7 +7,6 @@
     "owner",
     "project",
     "organization",
-    "uom_type",
     "unit_of_measure",
     "policy",
     "responsible_design_engineer",
@@ -54,7 +53,7 @@
       "Estimated Cost",
       "Lead Time",
       "Modified",
-      "Is LastRevision"
+      "LastRevision"
     ]
   },
   "Deviationsections": {
