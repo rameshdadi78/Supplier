@@ -77,21 +77,21 @@ export const Changes_Page = ({
       headerName: "Name",
       sortable: true,
       filter: true,
-      width: "400px",
+      width: "300px",
     },
     {
       field: "Description",
       headerName: "Description",
       sortable: true,
       filter: true,
-      width: "565px",
+      width: "500px",
     },
     {
       field: "Owner",
       headerName: "Owner",
       sortable: true,
       filter: true,
-      width: "350px",
+      width: "300px",
     },
     {
       field: "Action",
@@ -132,6 +132,19 @@ export const Changes_Page = ({
       minWidth: 100,
       maxWidth: 300,
     },
+    {
+      field: "State",
+      headerName: "State",
+      sortable: true,
+      filter: true,
+      width: "300px",
+    },{
+      field: "Synopsis",
+      headerName: "Synopsis",
+      sortable: true,
+      filter: true,
+      width: "300px",
+    }
   ]);
 
   useEffect(() => {
@@ -166,7 +179,9 @@ export const Changes_Page = ({
               if (caObjectIds.length === 0 || caObjectIds.includes(CAID)) {
                 newTableData.push({
                   Name: combinedAttribute["Name"] || "",
+                  State: combinedAttribute["State"] || "",
                   Description: combinedAttribute["Description"] || "",
+                  Synopsis: combinedAttribute["Synopsis"] || "",
                   Owner: combinedAttribute["Owner"] || "",
                   acknowledged: acknowledgeValue,
                   objectId: CAID,
