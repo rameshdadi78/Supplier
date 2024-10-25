@@ -800,7 +800,6 @@ button {
   text-decoration: none; /* Remove underline from all links */
   padding: 10px 15px;
   display: inline-block;
-  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.4px;
   transition: color 0.3s ease, border-bottom 0.3s ease;
@@ -808,7 +807,6 @@ button {
 
 .nav_links a.active_link {
   color: #007bff; /* Active link color */
-  font-size: 18px;
 }
 
 .clear_search_button {
