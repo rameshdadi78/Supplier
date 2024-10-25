@@ -20,7 +20,7 @@ const handleChangeActionRowClick = (rowData) => {
   };
 
 const [dropdownVisible, setDropdownVisible] = useState(false);
-
+const [partName, setPartName] = useState(null); // State to store the partid
 
 
 const handleColumnSelection = (attr) => {
@@ -134,7 +134,11 @@ const handleColumnSelection = (attr) => {
         if (selectedRow) {
             const result = selectedRow.results[0];
             const partDataKey = Object.keys(result).find(key => key.startsWith("objectId:"));
-      
+            const partData = result[partDataKey]; // Accessing the data using the objectId
+            if(partData) {
+            const nameAttribute = partData.basicAttributes.find(attr => attr.displayName === 'Name');
+            setPartName(nameAttribute.value);
+            }
             if (partDataKey) {
                 const objectId = partDataKey.split("objectId:")[1].trim();
                 fetchSpecifications(objectId);
@@ -198,7 +202,7 @@ const handleColumnSelection = (attr) => {
                   <CSVLink
                     data={dataToExport.data}
                     headers={dataToExport.headers}
-                    filename={`Specification_data_${exportOption ? 'all' : 'current'}.csv`}
+                    filename={`Specification_data__${partName}_${exportOption ? 'all' : 'current'}.csv`}
                     className="hidden-link"
                     ref={downloadRef}
                     key={csvLinkKey}
