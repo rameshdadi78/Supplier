@@ -14,7 +14,7 @@ import column from '../Icons/Columns.png';
 
 export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,setSelectedRowData,columnsData,setColumnsData,exportButtonRef,handleExportOptionChange,exportDropdownVisible,setExportDropdownVisible,exportDropdownRef,downloadRef,dataToExport,dropdownVisible,setDropdownVisible,exportOption,csvLinkKey,devVisibleColumns,setdevVisibleColumns,DevTableData,setDevTableData,setdevAailableAttributes,devAailableAttributes,selectedRow}) => {
     // const selectedRow = useContext(MainContext);
-
+    const [partName, setPartName] = useState(null); // State to store the partid
 
 
     const handleDeviationRowClick = (rowData) => {
@@ -52,7 +52,6 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
           };
         });
       
-
       
         setColumnsData(generatedColumns);
       }, [DevTableData]);
@@ -118,7 +117,11 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
         if (selectedRow) {
             const result = selectedRow.results[0];
             const partDataKey = Object.keys(result).find(key => key.startsWith("objectId:"));
-      
+            const partData = result[partDataKey]; // Accessing the data using the objectId
+            if(partData) {
+            const nameAttribute = partData.basicAttributes.find(attr => attr.displayName === 'Name');
+            setPartName(nameAttribute.value);
+            }
             if (partDataKey) {
                 const objectId = partDataKey.split("objectId:")[1].trim();
                 fetchDeviation(objectId);
@@ -167,7 +170,7 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
                     
                     data={dataToExport.data}
                     headers={dataToExport.headers}
-                    filename={`deviation_data_${exportOption ? 'all' : 'current'}.csv`}
+                    filename={`deviation_data_${partName}_${exportOption ? 'all' : 'current'}.csv`}
                     className="hidden-link"
                     ref={downloadRef}
                     key={csvLinkKey}
