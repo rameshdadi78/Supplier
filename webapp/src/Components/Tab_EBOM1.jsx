@@ -22,7 +22,7 @@ export const Tab_EBOM1 = ({setIsSlideInOpen,isSlideInOpen,columnsData,setColumns
   
     const [basicAttribute, setBasicAttribute] = useState({});
     const [otherAttribute, setOtherAttribute] = useState({});
-  
+    const [partName, setPartName] = useState(null); // State to store the partid
     const [expandedRows, setExpandedRows] = useState(new Set());
     const [isAllExpanded, setIsAllExpanded] = useState(false); 
     const [allRowsExpanded, setAllRowsExpanded] = useState(false);
@@ -41,7 +41,12 @@ const handleebom = async (selectedRow) => {
       const partDataKey = Object.keys(result).find(key => key.startsWith("objectId:"));
       const objectId = partDataKey.split("objectId:")[1].trim();
     //   setCurrentObjectid(objectId);
-  
+        const partData = result[partDataKey]; // Accessing the data using the objectId
+        if(partData) {
+        const nameAttribute = partData.basicAttributes.find(attr => attr.displayName === 'Name');
+        setPartName(nameAttribute.value);
+        }
+
       if (partDataKey) {
         const partData = result[partDataKey];
   
@@ -433,7 +438,7 @@ const handleebom = async (selectedRow) => {
                 <CSVLink
                   data={dataToExport.data}
                   headers={dataToExport.headers}
-                  filename={`EBOM_data_${exportOption ? 'all' : 'current'}.csv`}
+                  filename={`EBOM_data__${partName}_${exportOption ? 'all' : 'current'}.csv`}
                   className="hidden-link" // Hide the link visually
                   ref={downloadRef}
                   key={csvLinkKey} // Use a unique key to force re-render
