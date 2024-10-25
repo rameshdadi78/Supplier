@@ -122,6 +122,20 @@ export const Devaition_Page = ({ devObjectIds }) => {
       minWidth: 100,
       maxWidth: 100,
     },
+    {
+      field: "Title",
+      headerName: "Title",
+      sortable: true,
+      filter: true,
+      width: "300px",
+    },
+    {
+      field: "Priority",
+      headerName: "Priority",
+      sortable: true,
+      filter: true,
+      width: "300px",
+    }
   ]);
 
   useEffect(() => {
@@ -166,6 +180,8 @@ export const Devaition_Page = ({ devObjectIds }) => {
                   Name: combinedAttribute["Name"] || "",
                   Description: combinedAttribute["Description"] || "",
                   Owner: combinedAttribute["Owner"] || "",
+                  Priority: combinedAttribute["Priority"] || "",
+                  Title: combinedAttribute["Title"] || "",
                   acknowledged: acknowledgeValue,
                   objectId: DeviationId,
                   extraData: details,
