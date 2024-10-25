@@ -16,7 +16,7 @@ import { Tabs_Sec } from './Tabs_Sec';
 
 export const Tab_Changes = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,setSelectedRowData,columnsData,setColumnsData,visibleColumns,setVisibleColumns,availableAttributes,setAvailableAttributes,caData,setCaData,csvLinkKey,exportOption,exportButtonRef,exportDropdownRef,downloadRef,handleExportOptionChange,dropdownVisible,setDropdownVisible,exportDropdownVisible,setExportDropdownVisible,dataToExport,selectedRow}) => {
     // const selectedRow = useContext(MainContext);
-
+    const [partName, setPartName] = useState(null); // State to store the partid
  
     const handleChangeActionRowClick = (rowData) => {
         setSelectedRowData(rowData);
@@ -180,7 +180,11 @@ const fetchChangeActions = (objectId) => {
     if (selectedRow) {
         const result = selectedRow.results[0];
         const partDataKey = Object.keys(result).find(key => key.startsWith("objectId:"));
-  
+        const partData = result[partDataKey]; // Accessing the data using the objectId
+        if(partData) {
+        const nameAttribute = partData.basicAttributes.find(attr => attr.displayName === 'Name');
+        setPartName(nameAttribute.value);
+        }
         if (partDataKey) {
             const objectId = partDataKey.split("objectId:")[1].trim();
             fetchChangeActions(objectId);
@@ -214,7 +218,7 @@ const fetchChangeActions = (objectId) => {
                   <CSVLink
                     data={dataToExport.data}
                     headers={dataToExport.headers}
-                    filename={`ChangeAction_data_${exportOption ? 'all' : 'current'}.csv`}
+                    filename={`ChangeAction_data_${partName}_${exportOption ? 'all' : 'current'}.csv`}
                     className="hidden-link"
                     ref={downloadRef}
                     key={csvLinkKey}
