@@ -25,7 +25,7 @@ export const Tab_EBOM = ({setIsSlideInOpen,isSlideInOpen,columnsData,setColumnsD
     const [isAllExpanded, setIsAllExpanded] = useState(false); 
     const [allRowsExpanded, setAllRowsExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
-    
+    const [partName, setPartName] = useState(null); // State to store the partid
     const handleEBOMRowClick = (rowData) => {
         setSelectedRowData(rowData);
         setIsSlideInOpen(true);
@@ -141,7 +141,12 @@ export const Tab_EBOM = ({setIsSlideInOpen,isSlideInOpen,columnsData,setColumnsD
         if (selectedRow) {
             const result = selectedRow.results[0];
             const partDataKey = Object.keys(result).find(key => key.startsWith("objectId:"));
-    
+            const partData = result[partDataKey]; // Accessing the data using the objectId
+            if(partData) {
+            const nameAttribute = partData.basicAttributes.find(attr => attr.displayName === 'Name');
+            setPartName(nameAttribute.value);
+            }
+
             if (partDataKey) {
                 const objectId = partDataKey.split("objectId:")[1].trim();
                 fetchEBOMdetails(objectId, selectedRow);
@@ -457,7 +462,7 @@ const fetchDirectChildren = async (parentObjectId) => {
                 <CSVLink
                   data={dataToExport.data}
                   headers={dataToExport.headers}
-                  filename={`EBOM_data_${exportOption ? 'all' : 'current'}.csv`}
+                  filename={`EBOM_data_${partName}_${exportOption ? 'all' : 'current'}.csv`}
                   className="hidden-link" // Hide the link visually
                   ref={downloadRef}
                   key={csvLinkKey} // Use a unique key to force re-render
