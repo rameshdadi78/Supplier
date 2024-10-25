@@ -101,7 +101,7 @@ export const Nav_Tabs = ({
     changeaction: 0,
     ecparts: 0,
   });
-
+const [previousSearchTerm, setPreviousSearchTerm] = useState(''); 
   // Tracks if the search is active or not
   const [isSearchActive, setIsSearchActive] = useState(false);
   const username = localStorage.getItem("username");
@@ -129,23 +129,31 @@ export const Nav_Tabs = ({
     // Check the length of the search term
     if (temporarySearchTerm.length < 3) {
       alert("Search term must be at least 3 characters long.");
-      setTemporarySearchTerm("");
-      return; // Prevent further processing
+            return; // Prevent further processing
     }
     setIsSearchActive(true);
     handleSearchChange(temporarySearchTerm); // Execute search logic
+     setPreviousSearchTerm(temporarySearchTerm);
   };
 
   const handleClearSearch = () => {
     setIsSearchActive(false);
     setTemporarySearchTerm(""); // Clear the temporary search term
     handleSearchChange(""); // Pass an empty string to searchTerm
+    setPreviousSearchTerm('');
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault(); // Prevent form submission
-      handleSearchSubmit(); // Trigger search
+      // Check for empty search term and reset if it was previously populated
+            if (previousSearchTerm && temporarySearchTerm === '') {
+                setIsSearchActive(false);
+                handleSearchChange(''); // Reset search results
+                setPreviousSearchTerm(''); // Reset previous search term
+            } else {
+                handleSearchSubmit(); // Trigger search
+      }
     }
   };
 
