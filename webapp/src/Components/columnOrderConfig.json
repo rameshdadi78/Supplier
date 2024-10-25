@@ -35,7 +35,6 @@
       "Owner",
       "Project",
       "Organization",
-      "UOM Type",
       "Unit Of Measure",
       "Policy",
       "Responsible Engineer"
@@ -227,4 +226,3 @@
     ]
   }
 }
-
