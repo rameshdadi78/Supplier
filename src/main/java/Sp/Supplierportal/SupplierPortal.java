@@ -1,4 +1,4 @@
-
+]
 package Sp.Supplierportal;
 
 import java.io.FileNotFoundException;
@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -27,6 +28,9 @@ import javax.swing.plaf.synth.SynthOptionPaneUI;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -34,6 +38,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -1406,7 +1411,10 @@ public class SupplierPortal {
 	@GET
 	@Path("getchangeactiondetails")
 	@Produces(MediaType.APPLICATION_JSON)
-	public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
+	public Response getChangeActionDetails(@Context UriInfo uriInfo, @Context HttpHeaders headers) throws Exception {
+	String jwt = headers.getHeaderString("jwt");
+    	boolean jwtResult = CheckUser(jwt);
+    	if(jwtResult) { 
         // Retrieve database credentials from environment variables
         String url = System.getenv("SupplierPortalDBURL");
         String password = System.getenv("SupplierPortalDBPassword");
@@ -1417,7 +1425,9 @@ public class SupplierPortal {
 	    Properties pro = new Properties();
 	    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
 	    if (input == null) {
-	        throw new FileNotFoundException("sp.properties file not found.");
+	        return Response.status(Response.Status.NOT_FOUND)
+	                       .entity("{\"error\": \"sp.properties file not found.\"}")
+	                       .build();
 	    }
 	    pro.load(input);
 	    
@@ -1439,7 +1449,9 @@ public class SupplierPortal {
 	    // Get caID from query parameter
 	    String caID = uriInfo.getQueryParameters().getFirst("caid");
 	    if (caID == null || caID.trim().isEmpty()) {
-	        return "{ \"error\": \"Missing or empty caID parameter\" }";
+	        return Response.status(Response.Status.BAD_REQUEST)
+	                       .entity("{\"error\": \"Missing or empty caID parameter\"}")
+	                       .build();
 	    }
 
 	    // Query to fetch the required data
@@ -1482,14 +1494,18 @@ public class SupplierPortal {
 	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
-	        return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
+	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                       .entity("{\"error\": \"Database error: " + e.getMessage() + "\"}")
+	                       .build();
 	    }
 
 	    JSONObject finalObject = new JSONObject();
 	    finalObject.put("results", jsonArray);
-	    return finalObject.toString();
-	}
-
+	    return Response.ok(finalObject.toString()).build();
+   	 } else {
+      	return Response.status(Response.Status.UNAUTHORIZED).build();
+      }
+}
     /**
      * Updates acknowledgment information in the ca_suppliers_details table.
      *
@@ -1571,24 +1587,35 @@ public class SupplierPortal {
      *
      * @param uriInfo URI information containing the caid query parameter.
      * @return JSON response with affected items or error message.
+     * @throws ClassNotFoundException 
      * @throws Exception if any error occurs during data fetching.
      */
 
 	 	@GET
 		@Path("getcaaffectedItems")
 		@Produces(MediaType.APPLICATION_JSON)
-		public String getCaAffectedItems(@Context UriInfo uriInfo) throws Exception {
+		 public Response getCaAffectedItems(@Context UriInfo uriInfo, @Context HttpHeaders headers) throws ClassNotFoundException {
+		 String jwt = headers.getHeaderString("jwt");
+	    	boolean jwtResult = CheckUser(jwt);
+	    	if(jwtResult) { 
 		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
 
 		    // Load properties file
 		    Properties pro = new Properties();
-		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
+		    	     try (InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties")) {
 		    if (input == null) {
-		        throw new FileNotFoundException("sp.properties file not found.");
+	             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                            .entity("{\"error\": \"sp.properties file not found.\"}")
+	                            .build();
 		    }
 		    pro.load(input);
+	     } catch (IOException e) {
+	         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                        .entity("{\"error\": \"Error loading properties file.\"}")
+	                        .build();
+	     }
 		    String tablename = pro.getProperty("PartTable");
 		    String supplierTable = pro.getProperty("Ca_supplier_Table");
 
@@ -1621,7 +1648,9 @@ public class SupplierPortal {
 		    }
 		    String caId = uriInfo.getQueryParameters().getFirst("caid");
 		    if (caId == null || caId.trim().isEmpty()) {
-		        return "{ \"error\": \"Missing or empty email parameter\" }";
+	         return Response.status(Response.Status.BAD_REQUEST)
+	                        .entity("{\"error\": \"Missing or empty caid parameter\"}")
+	                        .build();
 		    }
 		    // Build the SQL query dynamically based on provided query parameters
 //		    String caDetailsQuery =  "SELECT epd.*, csd.supplier_visibility, csd.supplier_item_visibility, csd.supplier_spec_visibility " +
@@ -1704,7 +1733,10 @@ public class SupplierPortal {
 		        }
 		    } catch (Exception e) {
 		        e.printStackTrace();
-		    } 
+	         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	                        .entity("{\"error\": \"Database error occurred.\"}")
+	                        .build();
+	     }
 
 		    // Convert the uniquePartMap values to JSON array
 		    for (Map.Entry<String, JSONObject> entry : uniquePartMap.entrySet()) {
@@ -1714,10 +1746,15 @@ public class SupplierPortal {
 		        jsonArray.put(idObject);
 		    }
 
-		    JSONObject finalObject = new JSONObject();
-		    finalObject.put("results", jsonArray);
-		    return finalObject.toString();	 
-		}
+	     JSONObject finalObject = new JSONObject();
+	     finalObject.put("results", jsonArray);
+	     return Response.ok(finalObject.toString(), MediaType.APPLICATION_JSON).build();
+	 } else {
+      	return Response.status(Response.Status.UNAUTHORIZED).build();
+      }
+
+	 }
+
 	 	
 	    /**
      * Fetches supplier data for given object IDs and change action ID (caid).
@@ -1980,17 +2017,22 @@ public class SupplierPortal {
 		@GET
 		@Path("getDevaitionDetails")
 		@Produces(MediaType.APPLICATION_JSON)
-		public String getDevaitionDetails(@Context UriInfo uriInfo) throws Exception {
-        String url = System.getenv("SupplierPortalDBURL");
-        String password = System.getenv("SupplierPortalDBPassword");
-        String userName = System.getenv("SupplierPortalDBUsername");
+			public Response getDevaitionDetails(@Context UriInfo uriInfo,  @Context HttpHeaders headers) throws Exception {
+			String jwt = headers.getHeaderString("jwt");
+	    	boolean jwtResult = CheckUser(jwt);
+	    	if(jwtResult) {
+	        String url = System.getenv("SupplierPortalDBURL");
+	        String password = System.getenv("SupplierPortalDBPassword");
+	        String userName = System.getenv("SupplierPortalDBUsername");
 
 
 		    // Load properties file
 		    Properties pro = new Properties();
 		    InputStream input = getClass().getClassLoader().getResourceAsStream("sp.properties");
 		    if (input == null) {
-		        throw new FileNotFoundException("sp.properties file not found.");
+		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+		                       .entity("{\"error\": \"sp.properties file not found.\"}")
+		                       .build();
 		    }
 		    pro.load(input);
 		    
@@ -2012,7 +2054,9 @@ public class SupplierPortal {
 		    // Get caID from query parameter
 		    String devID = uriInfo.getQueryParameters().getFirst("devid");
 		    if (devID == null || devID.trim().isEmpty()) {
-		        return "{ \"error\": \"Missing or empty caID parameter\" }";
+		        return Response.status(Response.Status.BAD_REQUEST)
+		                       .entity("{ \"error\": \"Missing or empty devid parameter\" }")
+		                       .build();
 		    }
 
 		    // Query to fetch the required data
@@ -2055,12 +2099,18 @@ public class SupplierPortal {
 		        }
 		    } catch (SQLException e) {
 		        e.printStackTrace();
-		        return "{ \"error\": \"Database error: " + e.getMessage() + "\" }";
+		        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+		                       .entity("{ \"error\": \"Database error: " + e.getMessage() + "\" }")
+		                       .build();
 		    }
 
 		    JSONObject finalObject = new JSONObject();
 		    finalObject.put("results", jsonArray);
-		    return finalObject.toString();
+
+		    return Response.ok(finalObject.toString()).build();
+	    	 } else {
+		          	return Response.status(Response.Status.UNAUTHORIZED).build();
+		     }
 		}
 		
    /**
@@ -2910,7 +2960,10 @@ public class SupplierPortal {
 		@Path("searchAll")
 		@Consumes(MediaType.APPLICATION_JSON)
 		@Produces(MediaType.APPLICATION_JSON)
-		public Response searchAll(String s) {
+		public Response searchAll(String s, @Context HttpHeaders headers) {
+			String jwt = headers.getHeaderString("jwt");
+			boolean jwtResult = CheckUser(jwt);
+	        if(jwtResult) { 
 		    JSONObject finalResponse = new JSONObject();
 		    JSONArray jsonArray = new JSONArray();
 		    
@@ -3010,6 +3063,76 @@ public class SupplierPortal {
 		    finalResponse.put("results", jsonArray);
 
 		    return Response.ok(finalResponse.toString(), MediaType.APPLICATION_JSON).build();
+	        }else {
+	        	return Response.status(Response.Status.UNAUTHORIZED).build();
+	        }
 		}
+		
+		
+		public static boolean CheckUser(String s) {
+			String secretKey = "Xploria-Bangalore";
+			String username = "";
+	        try {
+	            Claims claims = Jwts.parser()
+	                    .setSigningKey(secretKey.getBytes()) 
+	                    .parseClaimsJws(s)
+	                    .getBody();
+	            username = (String) claims.get("username");
+	            Date expiration = claims.getExpiration();
+	            System.out.println("Token Expiry: " + expiration);
+	            if (expiration.before(new Date())) {
+	                System.out.println("Token has expired.");
+	            } else {
+	                System.out.println("Token is valid. Decoded payload: " + claims);
+	            }
 
+	        } catch (Exception e) {
+	            System.err.println("Token validation failed: " + e.getMessage());
+	        }
+			String sql = "select * from supplierportal_schema1.login_details";
+	    	String url = "jdbc:postgresql://localhost:5432/supplierportal";
+	    	String postgresUser = "postgres";
+	    	String postgrespass = "123456789";
+	    	
+	    	try {
+	    		Class.forName("org.postgresql.Driver");
+	    		
+	    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+	    		Statement stmt = con.createStatement();
+	    		
+	    		ResultSet set = stmt.executeQuery(sql);
+	    		
+	    		while(set.next()) {
+	    			String name = set.getString("email");
+	    			if(name != null) {
+	        			if(username.trim().equals(name.trim())) {
+	        				return true;
+	        			}
+	        				
+	    			}
+	    			
+	    		}
+	    		
+	    	}catch(Exception e) {
+	    		e.printStackTrace();
+	    	    	}
+		
+			return false;
+		}
+		public static String CreateJwt(String username) {
+			
+			long expirationTime = System.currentTimeMillis() +180000;
+
+		    String secretKey = "Xploria-Bangalore";
+		    System.out.println("supplierportal---------calling"+expirationTime);
+		    String jwtToken = Jwts.builder()
+		            .setExpiration(new Date(expirationTime))
+		            .claim("username", username)
+		            .signWith(SignatureAlgorithm.HS256, secretKey.getBytes())
+		            .compact();
+
+		    return jwtToken;
+			
+		}
+		
 }
