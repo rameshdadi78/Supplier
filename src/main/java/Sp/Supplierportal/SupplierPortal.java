@@ -3097,7 +3097,7 @@ public class SupplierPortal {
 	    	try {
 	    		Class.forName("org.postgresql.Driver");
 	    		
-	    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+	    		Connection con = DriverManager.getConnection(url,user,password);
 	    		Statement stmt = con.createStatement();
 	    		
 	    		ResultSet set = stmt.executeQuery(sql);
