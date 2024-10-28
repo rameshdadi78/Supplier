@@ -1051,14 +1051,14 @@ public class PortalData {
 		            System.err.println("Token validation failed: " + e.getMessage());
 		        }
 				String sql = "select * from supplierportal_schema1.login_details";
-String url = System.getenv("SupplierPortalDBURL");
+				String url = System.getenv("SupplierPortalDBURL");
 				String password = System.getenv("SupplierPortalDBPassword");
 				String user = System.getenv("SupplierPortalDBUsername");
 		    	
 		    	try {
 		    		Class.forName("org.postgresql.Driver");
 		    		
-		    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+		    		Connection con = DriverManager.getConnection(url,user,password);
 		    		Statement stmt = con.createStatement();
 		    		
 		    		ResultSet set = stmt.executeQuery(sql);
