@@ -6,6 +6,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -22,6 +23,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +37,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,11 +63,14 @@ public class ECPartInfo {
 	@GET
 @Path("changeActions")
 @Produces(MediaType.APPLICATION_JSON)
-public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception {
+public Response getChangeActionDetails(@Context UriInfo uriInfo, @Context HttpHeaders headers) throws Exception {
 /*     String url = "jdbc:postgresql://localhost:5432/supplierportal1";
     String userName = "postgres";
     String password = "Manoj123";
  */
+	String jwt = headers.getHeaderString("jwt");
+	boolean jwtResult = CheckUser(jwt);
+    if(jwtResult) { 
 	String url=System.getenv("SupplierPortalDBURL");
 	String password=System.getenv("SupplierPortalDBPassword");
 	String userName= System.getenv("SupplierPortalDBUsername");
@@ -168,9 +175,61 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
 
     JSONObject finalObject = new JSONObject();
     finalObject.put("objectdetails", jsonArray);
-    return finalObject.toString();
+    return Response.ok(finalObject.toString()).build();
+    }else {
+    	return Response.status(Response.Status.UNAUTHORIZED).build();
+    }
 }
+	public static boolean CheckUser(String s) {
+		String secretKey = "Xploria-Bangalore";
+		String username = "";
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(secretKey.getBytes()) 
+                    .parseClaimsJws(s)
+                    .getBody();
+            username = (String) claims.get("username");
+            Date expiration = claims.getExpiration();
+            System.out.println("Token Expiry: " + expiration);
+            if (expiration.before(new Date())) {
+                System.out.println("Token has expired.");
+            } else {
+                System.out.println("Token is valid. Decoded payload: " + claims);
+            }
 
+        } catch (Exception e) {
+            System.err.println("Token validation failed: " + e.getMessage());
+        }
+		String sql = "select * from supplierportal_schema1.login_details";
+    	String url = "jdbc:postgresql://localhost:5432/supplierportal";
+    	String postgresUser = "postgres";
+    	String postgrespass = "123456789";
+    	
+    	try {
+    		Class.forName("org.postgresql.Driver");
+    		
+    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+    		Statement stmt = con.createStatement();
+    		
+    		ResultSet set = stmt.executeQuery(sql);
+    		
+    		while(set.next()) {
+    			String name = set.getString("email");
+    			if(name != null) {
+        			if(username.trim().equals(name.trim())) {
+        				return true;
+        			}
+        				
+    			}
+    			
+    		}
+    		
+    	}catch(Exception e) {
+    		e.printStackTrace();
+    	    	}
+	
+		return false;
+	}
 
     /**
      * Fetches the change action data from the given table based on CAID.
@@ -285,7 +344,10 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
 	@GET
 	@Path("specifications")
 	 @Produces(MediaType.APPLICATION_JSON)
-	   public String getSpecificationDetails(@Context UriInfo uriInfo) throws Exception {
+	   public Response getSpecificationDetails(@Context UriInfo uriInfo, @Context HttpHeaders headers) throws Exception {
+		String jwt = headers.getHeaderString("jwt");
+    	boolean jwtResult = CheckUser(jwt);
+    	if(jwtResult) { 
 		String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String userName= System.getenv("SupplierPortalDBUsername");
@@ -349,7 +411,7 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
         }
 
         // Debug log for SQL statement
-        System.out.println("Executing SQL: " + sql.toString());
+
 
         ResultSet result = null;
         JSONArray jsonArray = new JSONArray();
@@ -398,7 +460,10 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
 
         JSONObject finalObject = new JSONObject();
         finalObject.put("objectdetails", jsonArray);
-        return finalObject.toString();
+        return Response.ok(finalObject.toString()).build();
+    	 } else {
+         	return Response.status(Response.Status.UNAUTHORIZED).build();
+         }
     }
 	 // Fetch specification data for the given specificationid
     private JSONObject fetchSpecificationData(Connection conn, String tableName, String specificationid, Map<String, String> columnMappings, Map<String, String> attributeDisplayNames) throws SQLException {
@@ -443,9 +508,7 @@ public String getChangeActionDetails(@Context UriInfo uriInfo) throws Exception 
                 }
             }
 
-            // Debugging statements to ensure attributes are correctly identified
-            System.out.println("Basic Attributes: " + basicAttributesArray.toString());
-            System.out.println("Other Attributes: " + attributesArray.toString());
+
 
             specificationData.put("BasicAttributesOfSpecification", basicAttributesArray);
             specificationData.put("attributesOfSpec", attributesArray);
