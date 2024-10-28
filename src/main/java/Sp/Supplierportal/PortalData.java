@@ -2,15 +2,21 @@ package Sp.Supplierportal;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("portaldata")
 public class PortalData {
@@ -716,7 +722,13 @@ public class PortalData {
     @GET
     @Path("deviationdetails")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getDeviationDetails(@QueryParam("partid") String partid) throws Exception {
+    public Response  getDeviationDetails(@QueryParam("partid") String partid,  @Context HttpHeaders headers) throws Exception {
+    	String jwt = headers.getHeaderString("jwt");
+    	boolean jwtResult = CheckUser(jwt);
+        if(jwtResult) { 
+        	
+        
+    	
     	String url=System.getenv("SupplierPortalDBURL");
 		String password=System.getenv("SupplierPortalDBPassword");
 		String user= System.getenv("SupplierPortalDBUsername");
@@ -949,7 +961,10 @@ public class PortalData {
             throw new Exception("Error occurred while fetching deviation details.", e);
         }
 
-        return responseObject.toString();
+        return Response.ok(responseObject.toString()).build();
+        } else {
+        	return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
     }
 			/**
 		* Endpoint to upload a file to the database.
@@ -1012,6 +1027,58 @@ public class PortalData {
 					return "text/plain";
 				}
 				return "application/octet-stream"; // Default binary file type
+			}
+			
+			
+			public static boolean CheckUser(String s) {
+				String secretKey = "Xploria-Bangalore";
+				String username = "";
+		        try {
+		            Claims claims = Jwts.parser()
+		                    .setSigningKey(secretKey.getBytes()) 
+		                    .parseClaimsJws(s)
+		                    .getBody();
+		            username = (String) claims.get("username");
+		            Date expiration = claims.getExpiration();
+		            System.out.println("Token Expiry: " + expiration);
+		            if (expiration.before(new Date())) {
+		                System.out.println("Token has expired.");
+		            } else {
+		                System.out.println("Token is valid. Decoded payload: " + claims);
+		            }
+
+		        } catch (Exception e) {
+		            System.err.println("Token validation failed: " + e.getMessage());
+		        }
+				String sql = "select * from supplierportal_schema1.login_details";
+		    	String url = "jdbc:postgresql://localhost:5432/supplierportal";
+		    	String postgresUser = "postgres";
+		    	String postgrespass = "123456789";
+		    	
+		    	try {
+		    		Class.forName("org.postgresql.Driver");
+		    		
+		    		Connection con = DriverManager.getConnection(url,postgresUser,postgrespass);
+		    		Statement stmt = con.createStatement();
+		    		
+		    		ResultSet set = stmt.executeQuery(sql);
+		    		
+		    		while(set.next()) {
+		    			String name = set.getString("email");
+		    			if(name != null) {
+		        			if(username.trim().equals(name.trim())) {
+		        				return true;
+		        			}
+		        				
+		    			}
+		    			
+		    		}
+		    		
+		    	}catch(Exception e) {
+		    		e.printStackTrace();
+		    	    	}
+			
+				return false;
 			}
 		
 }// main class Ends
