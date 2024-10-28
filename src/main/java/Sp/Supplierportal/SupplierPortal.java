@@ -3090,7 +3090,7 @@ public class SupplierPortal {
 	            System.err.println("Token validation failed: " + e.getMessage());
 	        }
 			String sql = "select * from supplierportal_schema1.login_details";
-			String url = System.getenv("SupplierPortalDBURL");
+	    String url = System.getenv("SupplierPortalDBURL");
 				String password = System.getenv("SupplierPortalDBPassword");
 				String user = System.getenv("SupplierPortalDBUsername");
 	    	
@@ -3118,21 +3118,6 @@ public class SupplierPortal {
 	    	    	}
 		
 			return false;
-		}
-		public static String CreateJwt(String username) {
-			
-			long expirationTime = System.currentTimeMillis() +180000;
-
-		    String secretKey = "Xploria-Bangalore";
-		    System.out.println("supplierportal---------calling"+expirationTime);
-		    String jwtToken = Jwts.builder()
-		            .setExpiration(new Date(expirationTime))
-		            .claim("username", username)
-		            .signWith(SignatureAlgorithm.HS256, secretKey.getBytes())
-		            .compact();
-
-		    return jwtToken;
-			
 		}
 		
 }
