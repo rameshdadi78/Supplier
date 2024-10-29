@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useState, useEffect, useRef, useContext } from "react";
 import API_BASE_URL from "../config";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
@@ -13,6 +13,7 @@ import CA_AffectedItems from "./CA_AffectedItems";
 import { Tabs_Sec } from "./Tabs_Sec";
 import loadingIcon from "../Icons/loading.png"; // Import the loading icon
 import affectedItemsImage from '../Icons/supplies.png'
+import { FirstContext } from "../App";
 const MainContext = createContext();
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -55,7 +56,7 @@ export const Changes_Page = ({
   const [processDetails, setProcessDetails] = useState({
     changeActionName: "",
   });
-
+  const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
   // Create a ref for the grid
   const gridRef = useRef(null);
 
@@ -309,11 +310,22 @@ export const Changes_Page = ({
   };
 
   const fetchChangeActionDetails = async (objectId) => {
+    localStorage.setItem("is_Active", "true");
+    const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
     try {
       const response = await fetch(
-        `${API_BASE_URL}/SupplierPortal/getchangeactiondetails?caid=${objectId}`
-      );
-
+        `${API_BASE_URL}/SupplierPortal/getchangeactiondetails?caid=${objectId}`, {
+          method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          jwt: jwtToken,
+        },
+      });
+      if (response.status === 401) {
+        setSessionTimeoutOpen(true);
+        return;
+      }
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
