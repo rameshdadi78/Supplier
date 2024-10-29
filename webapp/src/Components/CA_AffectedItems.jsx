@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import API_BASE_URL from "../config";
 import DataTable from "react-data-table-component";
 import icon from "../Icons/list.png";
@@ -6,7 +6,7 @@ import { Tabs_Sec_Popup } from "./Tabs_Sec_Popup";
 import partIcon from "../Icons/PhysicalProduct.png";
 import column from "../Icons/Columns.png";
 import "../Styles/Tabs_Sec.css"; // Update based on the CSS file you need
-
+import { FirstContext } from "../App";
 export const Affected_popup = ({
   isOpen,
   onClose,
@@ -63,15 +63,27 @@ export default function CA_AffectedItems({
   const [combinedAttributes, setCombinedAttributes] = useState([]);
   const [columns, setColumns] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
+  const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
   const dropdownRef = useRef(null); // To reference the dropdown for outside click detection
 
   useEffect(() => {
+    localStorage.setItem("is_Active", "true");
+    const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
     const fetchAffectedItems = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/SupplierPortal/getcaaffectedItems?caid=${caId}`
-        );
+          `${API_BASE_URL}/SupplierPortal/getcaaffectedItems?caid=${caId}`, {
+            method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            jwt: jwtToken,
+          },
+        });
+        if (response.status === 401) {
+          setSessionTimeoutOpen(true);
+          return;
+        }
         const data = await response.json();
         const objectArray = data.results || [];
         const formattedData = [];
