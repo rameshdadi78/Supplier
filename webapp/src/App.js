@@ -96,6 +96,8 @@ export const HomePage = () => {
   };
 
   useEffect(() => {
+    localStorage.setItem("is_Active", "true");
+    const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
     const fetchSearchdata = async () => {
       try {
         const response = await fetch(
@@ -104,6 +106,8 @@ export const HomePage = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+            Accept: "application/json",
+            jwt: jwtToken,
             },
             body: JSON.stringify({
               text: searchTerm,
@@ -112,7 +116,10 @@ export const HomePage = () => {
             }),
           }
         );
-
+        if (response.status === 401) {
+          setSessionTimeoutOpen(true);
+          return;
+        }
         if (response.ok) {
           const data = await response.json();
 
