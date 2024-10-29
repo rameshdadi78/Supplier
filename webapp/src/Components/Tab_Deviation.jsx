@@ -11,10 +11,11 @@ import Deviation from '../Icons/Deviation.png';
 import propertiesicon from '../Icons/Properties.png';
 import exporticon from '../Icons/Export.png'; 
 import column from '../Icons/Columns.png';
-
+import { FirstContext } from "../App";
 export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,setSelectedRowData,columnsData,setColumnsData,exportButtonRef,handleExportOptionChange,exportDropdownVisible,setExportDropdownVisible,exportDropdownRef,downloadRef,dataToExport,dropdownVisible,setDropdownVisible,exportOption,csvLinkKey,devVisibleColumns,setdevVisibleColumns,DevTableData,setDevTableData,setdevAailableAttributes,devAailableAttributes,selectedRow}) => {
     // const selectedRow = useContext(MainContext);
     const [partName, setPartName] = useState(null); // State to store the partid
+  const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
 
 
     const handleDeviationRowClick = (rowData) => {
@@ -56,14 +57,25 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
         setColumnsData(generatedColumns);
       }, [DevTableData]);
 
-
-      const fetchDeviation = (objectId) => {
-        //Deviation fetch code starts
-        fetch(`${API_BASE_URL}/portaldata/deviationdetails?partid=${objectId}`)
-        .then(res => res.json())
-        .then(data => {
-
-        const objectDetailsArray = data.objectdetails;
+  const fetchDeviation = async (objectId) => {
+    //Deviation fetch code starts
+    localStorage.setItem("is_Active", "true");
+  const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
+  try {
+  const response = await fetch(`${API_BASE_URL}/portaldata/deviationdetails?partid=${objectId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      jwt: jwtToken,
+    },
+  });
+  if (response.status === 401) {    
+    setSessionTimeoutOpen(true);
+    return;
+  }
+  const data = await response.json();
+           const objectDetailsArray = data.objectdetails;
         if (Array.isArray(objectDetailsArray)) {
             if (objectDetailsArray.length > 0)  {
             const combinedDataList = [];
@@ -106,11 +118,10 @@ export const Tab_Deviation = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,se
             setDevTableData([]);
             setdevAailableAttributes([]);
         }
-        })
-        .catch(error => {
-        console.error('Error fetching deviation details:', error);
-        });
-    };
+      } catch(error) {
+        console.error("Error fetching deviation details:", error);
+      }
+  };
 
 
     useEffect(() => {
