@@ -6,6 +6,7 @@ import PartSpecificationDocument from '../Icons/PartSpecificationDocument.png';
 import { SlideInPage } from './SlideInPage';
 import columnOrderConfig from './columnOrderConfig.json';
 import { CSVLink } from 'react-csv';
+import { FirstContext } from "../App";
 import exporticon from '../Icons/Export.png'; 
 import column from '../Icons/Columns.png';
 
@@ -13,7 +14,7 @@ export const Tab_Specification = ({handleExportOptionChange,exportDropdownVisibl
     // const selectedRow = useContext(MainContext);
 
 
-
+    const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
 const handleChangeActionRowClick = (rowData) => {
     setSelectedRowData(rowData);
     setIsSlideInOpen(true);
@@ -39,11 +40,27 @@ const handleColumnSelection = (attr) => {
 
    
 
-    const fetchSpecifications = (objectId) => {
-       
-        fetch(`${API_BASE_URL}/parts/specifications?partid=${objectId}`)
-        .then(res => res.json())
-        .then(data => {
+    const fetchSpecifications = async (objectId) => {
+      localStorage.setItem("is_Active", "true");
+      const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
+      try {
+      const response = await fetch(`${API_BASE_URL}/parts/specifications?partid=${objectId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          jwt: jwtToken,
+        },
+      });
+      if (response.status === 401) {
+        
+        setSessionTimeoutOpen(true);
+        return;
+      }
+      const data = await response.json();
+        // fetch(`${API_BASE_URL}/parts/specifications?partid=${objectId}`)
+        // .then(res => res.json())
+        // .then(data => {
 
         const objectDetailsArray = data.objectdetails;
         if (Array.isArray(objectDetailsArray)) {
@@ -124,10 +141,9 @@ const handleColumnSelection = (attr) => {
         } else {
           console.error('Expected an array of object details');
         }
-      })
-      .catch(error => {
+      } catch(error){
         console.error('Error fetching Specification details:', error);
-      });
+      };
 
     };
     useEffect(() => {
