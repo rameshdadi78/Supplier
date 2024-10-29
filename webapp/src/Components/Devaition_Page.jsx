@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import API_BASE_URL from "../config";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
@@ -11,7 +11,7 @@ import { Tabs, Tab, TabList, TabPanel } from "react-tabs";
 import jsonStructure from "./columnOrderConfig.json";
 import { Tabs_Sec } from "./Tabs_Sec";
 import loadingIcon from "../Icons/loading.png"; // Import the loading icon
-
+import { FirstContext } from "../App";
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
@@ -49,7 +49,7 @@ export const Devaition_Page = ({ devObjectIds }) => {
     changeActionName: "",
   });
   const toggleGeneral = () => setIsGeneralOpen(!isGeneralOpen);
-
+  const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
   // Show loading icon for 1 second on component mount
   useEffect(() => {
     setLoading(true); // Show loading spinner initially
@@ -314,11 +314,22 @@ export const Devaition_Page = ({ devObjectIds }) => {
   };
 
   const fetchDeviationDetails = async (objectId) => {
+    localStorage.setItem("is_Active", "true");
+    const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
     try {
       const response = await fetch(
-        `${API_BASE_URL}/SupplierPortal/getDevaitionDetails?devid=${objectId}`
-      );
-
+        `${API_BASE_URL}/SupplierPortal/getDevaitionDetails?devid=${objectId}`, {
+          method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          jwt: jwtToken,
+        },
+      });
+      if (response.status === 401) {
+        setSessionTimeoutOpen(true);
+        return;
+      }
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
