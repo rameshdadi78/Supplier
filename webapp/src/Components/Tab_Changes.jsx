@@ -2,6 +2,7 @@
 import React from 'react'
 import { useState, useEffect,useContext,useRef} from 'react';
 import API_BASE_URL from '../config';
+import { FirstContext } from "../App";
 // import { MainContext } from "./MainSection";
 import DataTable from 'react-data-table-component';
 import columnOrderConfig from './columnOrderConfig.json';
@@ -18,6 +19,7 @@ export const Tab_Changes = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,setS
     // const selectedRow = useContext(MainContext);
     const [partName, setPartName] = useState(null); // State to store the partid
  
+    const { sessionTimeoutOpen, setSessionTimeoutOpen } = useContext(FirstContext);
     const handleChangeActionRowClick = (rowData) => {
         setSelectedRowData(rowData);
         setIsSlideInOpen(true);
@@ -46,11 +48,26 @@ export const Tab_Changes = ({setIsSlideInOpen,isSlideInOpen,selectedRowData,setS
   
 
 //ChangeAction fetch
-const fetchChangeActions = (objectId) => {
-    fetch(`${API_BASE_URL}/parts/changeActions?partid=${objectId}`)
-    .then(res => res.json())
-    .then(data => {
-
+const fetchChangeActions = async (objectId) => {
+  localStorage.setItem("is_Active", "true");
+  const jwtToken = JSON.parse(localStorage.getItem("userData")).jwt;
+  try {
+  const response = await fetch(`${API_BASE_URL}/parts/changeActions?partid=${objectId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      jwt: jwtToken,
+    },
+  });
+  if (response.status === 401) {
+    console.log("----------------------calling change tab");
+    
+    setSessionTimeoutOpen(true);
+    return;
+  }
+  const data = await response.json();
+   
       const objectDetailsArray = data.objectdetails;
   
       if (Array.isArray(objectDetailsArray)) {
@@ -138,10 +155,9 @@ const fetchChangeActions = (objectId) => {
         console.error('Expected an array of object details');
       }
       
-    })
-    .catch(error => {
+    } catch(error) {
       console.error('Error fetching CA details:', error);
-    });
+    }
 
 
 
